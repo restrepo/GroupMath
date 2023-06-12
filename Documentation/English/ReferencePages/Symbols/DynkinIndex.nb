@@ -1,0 +1,996 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     43474,        986]
+NotebookOptionsPosition[     35941,        824]
+NotebookOutlinePosition[     38151,        881]
+CellTagsIndexPosition[     38066,        876]
+WindowTitle->DynkinIndex
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["GROUP MATH SYMBOL", "PacletNameCell",ExpressionUUID->
+     "24f07415-44b5-4c57-859c-970e97e05575"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Tutorials",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }],ExpressionUUID->"88119dc6-d20a-4306-87e2-1469e5a499db"],
+         TextCell[
+          Row[{"Tutorials", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"GroupMath Tutorial\"\>":>
+       Documentation`HelpLookup["paclet:GroupMath/tutorial/GroupMathDoc"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"Tutorials"]],
+      LineSpacing->{1.4, 0},ExpressionUUID->
+      "1c5322f0-f3f6-4aa0-a8e5-c71d8c6c35d8"],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }],ExpressionUUID->"4c005ed9-50d6-49a7-85af-2ee49f4eccc7"],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"GroupMath/ref/DynkinIndex\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["GroupMath/ref/DynkinIndex"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/GroupMath/ref/\
+DynkinIndex.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$16825], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "GroupMath/ref/DynkinIndex", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0},ExpressionUUID->
+      "09a67075-e5c6-40a7-9e80-5bac43c8148c"]
+    }], "AnchorBar",ExpressionUUID->"eac2c9fa-b0b9-4cae-8e34-461a0ee7513c"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"e86c8c7c-095f-46bf-96f0-a9bd9534c9e6"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell["DynkinIndex", "ObjectName",ExpressionUUID->
+  "57b8150e-8688-4365-82d8-726af85d32d9"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]],ExpressionUUID->"bf5c634d-c79b-42f0-9ab3-73742c83fe6e"],
+ Cell[BoxData[
+ ""], "ObjectNameTranslation",ExpressionUUID->
+  "346d3783-ce8c-4b53-a749-30feff763b5e"]
+}], "ObjectNameGrid",ExpressionUUID->"837795ab-9ae5-4392-8567-a9f014488d49"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"DynkinIndex", "[", 
+       RowBox[{"group", ",", " ", "rep"}], "]"}]], "InlineFormula",
+      ExpressionUUID->"849dc505-2071-4f90-821d-fe7fec70fa62"],
+     " \[LineSeparator]Computes the Dynkin index of representation ",
+     Cell[BoxData[
+     "rep"], "InlineFormula",ExpressionUUID->
+      "99544333-4ebc-4085-9d02-c42e2b2b16c1"],
+     " of ",
+     Cell[BoxData[
+     "group"], "InlineFormula",ExpressionUUID->
+      "d774099b-b6d8-4352-a18d-3092dee2a2bd"]
+    }],ExpressionUUID->"48a78624-1b5c-45d2-8b91-9e8a3ed687cf"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{"Columns" -> {{None}}, "Rows" -> {{None}}}},
+ CellID->982511436,ExpressionUUID->"9310f3eb-34a1-45c5-a64d-085115a32b72"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]],ExpressionUUID->"b6e6099f-22d6-4021-92c7-4114c20de7a6"],
+   "Details"
+  }], "NotesFrameText",ExpressionUUID->"e316e03c-932b-4b8e-8624-7e6c887e133e"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->
+   "Preemptive"]],ExpressionUUID->"93e90bfc-17c6-4860-9d75-80cf8a52bd36"]], \
+"NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->9898841,ExpressionUUID->"bc8a8b68-1775-4d19-b631-945e1746e77d"],
+
+Cell["", "SectionHeaderSpacer",ExpressionUUID->"3e0a0d90-91e8-4223-bc78-6e215769b8b5"],
+
+Cell[TextData[{
+ Cell[BoxData[
+ "group"], "InlineFormula",ExpressionUUID->
+  "0ff14137-b15a-4508-b2fa-e5379f146f40"],
+ " should be a ",
+ ButtonBox["Cartan matrix",
+  BaseStyle->"Link",
+  ButtonData->"paclet:GroupMath/ref/CartanMatrix"],
+ "."
+}], "Notes",
+ CellID->1067943069,ExpressionUUID->"2a7cd6de-efcd-4e55-a779-8d43d95935d0"],
+
+Cell[TextData[{
+ "Each representation ",
+ Cell[BoxData[
+ "rep"], "InlineFormula",ExpressionUUID->
+  "bc4d4e9f-4e19-4c0c-b3a1-8182c23989b9"],
+ " should be a list of non-negative integers (Dynkin coefficients). It is \
+also possible to use the simplified input format for representations (see the \
+",
+ ButtonBox["GroupMath tutorial",
+  BaseStyle->"Link",
+  ButtonData->"paclet:GroupMath/tutorial/GroupMathDoc"],
+ " page)."
+}], "Notes",
+ CellID->638839415,ExpressionUUID->"402aa7ad-20a6-44fb-8513-57d51de1311b"],
+
+Cell[TextData[{
+ "This the same as ",
+ Cell[BoxData[
+  RowBox[{
+   RowBox[{"Casimir", "[", 
+    RowBox[{"group", ",", " ", "rep"}], "]"}], " ", 
+   RowBox[{
+    RowBox[{"DimR", "[", 
+     RowBox[{"group", ",", " ", "rep"}], "]"}], "/", 
+    RowBox[{"DimR", "[", 
+     RowBox[{"group", ",", " ", 
+      RowBox[{"Adjoint", "[", "group", "]"}]}], "]"}]}]}]], "InlineFormula",
+  ExpressionUUID->"c6b69024-07d5-4eb6-98d9-a695c288b17e"],
+ "."
+}], "Notes",
+ CellID->110993762,ExpressionUUID->"7ef7aeb1-7f1d-4599-86c9-971bc078e994"],
+
+Cell[TextData[{
+ "Assuming that ",
+ Cell[BoxData[
+  SuperscriptBox["T", "a"]], "InlineFormula",ExpressionUUID->
+  "8f87f89e-ecdd-49db-8e10-8f924d763cd1"],
+ " are the representation matrices, then ",
+ Cell[BoxData[
+  RowBox[{
+   RowBox[{"Tr", 
+    RowBox[{"(", 
+     RowBox[{
+      SuperscriptBox["T", "a"], 
+      SuperscriptBox["T", "b"]}], ")"}]}], "="}]], "InlineFormula",
+  ExpressionUUID->"30810cce-8ead-4a6b-8bb0-64170416ee83"],
+ "S(rep) ",
+ Cell[BoxData[
+  RowBox[{
+   SubscriptBox["\[Delta]", "ab"], " "}]], "InlineFormula",ExpressionUUID->
+  "976b3a8a-d778-48bd-8006-c7b2d3c628a7"],
+ " , where the number S(rep) is the Dynkin index of the representation."
+}], "Notes",
+ CellID->634968245,ExpressionUUID->"b18b78e3-ec6a-4b57-bafb-4b06bd73afc3"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"6fa8d664-ba5b-4284-ade5-b2c0d9dfb4b2"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]],ExpressionUUID->"694cde0e-4f3c-4413-a901-a6ac423438c4"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(2)", "ExampleCount",ExpressionUUID->
+  "c26ab3fd-6d40-4089-9c65-d23f3a3ee150"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CellTags->"PrimaryExamplesSection",
+ CellID->474541172,ExpressionUUID->"3bfa22d9-1bd3-4a2e-bd12-8887338533b7"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(2)", "ExampleCount",ExpressionUUID->
+  "043d5424-37f6-477e-97ba-fca3487559b7"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CellID->67842181,ExpressionUUID->"070f27f8-17e6-4a6b-8bad-bede6d14aad4"],
+
+Cell[TextData[{
+ "The usual convention of having the fundamental of SU(n) with a Dynkin index \
+",
+ Cell[BoxData[
+  FractionBox["1", "2"]], "InlineFormula",ExpressionUUID->
+  "0b6c04f6-2675-4bbf-b0f5-3b6fae320b72"],
+ " is respected by this method:"
+}], "ExampleText",
+ CellID->4632706,ExpressionUUID->"245c279e-6540-4232-9f6b-d993268f8f0e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(2): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU2", ",", "2"}], "]"}]}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(3): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU3", ",", "3"}], "]"}]}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(4): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU4", ",", "4"}], "]"}]}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(5): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU5", ",", "5"}], "]"}]}], "]"}], ";"}]}], "Input",
+ CellLabel->"In[1]:=",
+ CellID->198201436,ExpressionUUID->"db582094-1651-454e-8df7-dcb7813b8ad9"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(2): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(2): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[18]:=",
+ CellID->16171692,ExpressionUUID->"6af1f81e-c435-4ad6-a053-357f1c5c9fea"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(3): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(3): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[18]:=",
+ CellID->33545871,ExpressionUUID->"88858654-dded-4164-9c57-54ab07e838cd"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(4): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(4): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[18]:=",
+ CellID->32003834,ExpressionUUID->"ae13be6d-2454-4a2f-ae79-4bfe72fb9910"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(5): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(5): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[18]:=",
+ CellID->54632386,ExpressionUUID->"280874d9-2a8f-412c-bb74-805067ade10c"]
+}, Open  ]]
+}, Open  ]],
+
+Cell["\<\
+In the above code, the simplified input format for representations was used. \
+The following code computes the same thing:\
+\>", "ExampleText",
+ CellID->96642750,ExpressionUUID->"e4aa1a94-c20b-427d-8276-b4a8c2d2e952"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(2): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU2", ",", 
+      RowBox[{"{", "1", "}"}]}], "]"}]}], "]"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(3): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU3", ",", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", "0"}], "}"}]}], "]"}]}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(4): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU4", ",", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", "0", ",", "0"}], "}"}]}], "]"}]}], "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", 
+   RowBox[{"\"\<Dynkin index of the fundamental of SU(5): \>\"", ",", 
+    RowBox[{"DynkinIndex", "[", 
+     RowBox[{"SU5", ",", 
+      RowBox[{"{", 
+       RowBox[{"1", ",", "0", ",", "0", ",", "0"}], "}"}]}], "]"}]}], "]"}], 
+  ";"}]}], "Input",
+ CellLabel->"In[2]:=",
+ CellID->126609898,ExpressionUUID->"bb0e84bd-41b0-447d-97f6-81dee114d408"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(2): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(2): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[22]:=",
+ CellID->374147891,ExpressionUUID->"d7ced718-996f-4ac3-8acd-48342d142750"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(3): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(3): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[22]:=",
+ CellID->141311577,ExpressionUUID->"bc7e2e95-8aee-4ecc-b8c9-5d9031b8cc64"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(4): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(4): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[22]:=",
+ CellID->466670959,ExpressionUUID->"532f3dd8-326a-47b6-b8ea-6e31a41b13d4"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{"\<\"Dynkin index of the fundamental of SU(5): \"\>", 
+   "\[InvisibleSpace]", 
+   FractionBox["1", "2"]}],
+  SequenceForm["Dynkin index of the fundamental of SU(5): ", 
+   Rational[1, 2]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[22]:=",
+ CellID->230418556,ExpressionUUID->"003ae4ed-37f5-47c0-a97e-8f8248808538"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter",ExpressionUUID->
+   "dafe3af0-c94e-4736-85b7-c7bb7bd2e4bc"],
+  $Line = 0; Null]], "ExampleDelimiter",
+ CellID->51641276,ExpressionUUID->"9354133a-4711-4bd0-9d38-cab0b78eca3d"],
+
+Cell[TextData[{
+ "We can check that the results of the ",
+ Cell[BoxData[
+ "DynkinIndex"], "InlineFormula",ExpressionUUID->
+  "83a804c8-9274-4644-94d7-7aee4ef195d9"],
+ " function match the ones obtained by calculating the result directly for \
+the formula ",
+ Cell[BoxData[
+  RowBox[{
+   RowBox[{"Tr", 
+    RowBox[{"(", 
+     RowBox[{
+      SuperscriptBox["T", "a"], 
+      SuperscriptBox["T", "b"]}], ")"}]}], "="}]], "InlineFormula",
+  ExpressionUUID->"007baec7-f7f1-4998-93a6-b151d78df8fe"],
+ "S(rep) ",
+ Cell[BoxData[
+  RowBox[{
+   SubscriptBox["\[Delta]", "ab"], " "}]], "InlineFormula",ExpressionUUID->
+  "a246a205-7b42-4bb7-ac7e-87c9fd21e529"],
+ ". Consider for example the 27-dimensional representation of F4:"
+}], "Notes",
+ CellID->26871987,ExpressionUUID->"eb744c3b-68b7-423c-82b6-7969262e6f3f"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"DynkinIndex", "[", 
+  RowBox[{"F4", ",", "26"}], "]"}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->638777469,ExpressionUUID->"97ae8ba8-7d00-4151-bad4-2882af705499"],
+
+Cell[BoxData["3"], "Output",
+ CellLabel->"Out[1]=",
+ CellID->435726647,ExpressionUUID->"4b8d65ba-f51c-4082-bac0-67ba964378a4"]
+}, Open  ]],
+
+Cell["\<\
+The group algebra is 52-dimensional, so 'matrices' below is a list of 52 \
+matrices, with dimensions 26 x 26:\
+\>", "Notes",
+ CellID->206561630,ExpressionUUID->"c73959e6-2b7e-48f5-ab6c-5122b0ecd748"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"matrices", "=", 
+   RowBox[{"RepMatrices", "[", 
+    RowBox[{"F4", ",", "26"}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"matrices", "//", "Dimensions"}]}], "Input",
+ CellLabel->"In[2]:=",
+ CellID->109344574,ExpressionUUID->"9b263be6-5355-4cab-b8ad-3a8e8bf2403a"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"52", ",", "26", ",", "26"}], "}"}]], "Output",
+ CellLabel->"Out[2]=",
+ CellID->100571087,ExpressionUUID->"98d4c8f8-eaec-40a9-8eb8-0271c697df60"]
+}, Open  ]],
+
+Cell[TextData[{
+ "We can then check that  ",
+ Cell[BoxData[
+  RowBox[{"Tr", 
+   RowBox[{"(", 
+    RowBox[{
+     SuperscriptBox["T", "a"], 
+     SuperscriptBox["T", "b"]}], ")"}]}]], "InlineFormula",ExpressionUUID->
+  "61811b3e-53f0-4764-99e6-3a5fe96e3454"],
+ " is a matrix proportional to ",
+ Cell[BoxData[
+  SubscriptBox["\[Delta]", "ab"]], "InlineFormula",ExpressionUUID->
+  "91c449cd-81b9-4a33-b5e6-7cb87b947b61"],
+ ", and indeed the proportionality factor is DynkinIndex[F4,26]=3:"
+}], "Notes",
+ CellID->284108355,ExpressionUUID->"f76fcb5d-eae2-4458-965d-460d4af4e8ce"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Table", "[", 
+   RowBox[{
+    RowBox[{"Tr", "[", 
+     RowBox[{"matrixA", ".", "matrixB"}], "]"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"matrixA", ",", "matrices"}], "}"}], ",", 
+    RowBox[{"{", 
+     RowBox[{"matrixB", ",", "matrices"}], "}"}]}], "]"}], "//", 
+  "MatrixForm"}]], "Input",
+ CellLabel->"In[3]:=",
+ CellID->482268689,ExpressionUUID->"d2b66c46-bd99-4f18-8d73-2db4728fc97e"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "3", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "3", "0", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "3", "0", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "3", "0", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "3", "0", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "3", "0", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "3", "0", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "3", "0", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "3", "0", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "3", "0"},
+     {"0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", 
+      "0", "0", "0", "0", "0", "0", "0", "0", "0", "3"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellLabel->"Out[3]//MatrixForm=",
+ CellID->753864196,ExpressionUUID->"f0ba3ce3-8779-4771-96e5-e29a6e8e2d99"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"ba037bba-4117-43c6-b756-b4666484e120"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]],ExpressionUUID->"9bb79220-7384-4010-86d2-d38175beced2"],
+ "Tutorials"
+}], "TutorialsSection",
+ WholeCellGroupOpener->True,
+ CellID->250839057,ExpressionUUID->"54851f80-a71d-499f-9104-ea04b04e8035"],
+
+Cell["", "SectionHeaderSpacer",ExpressionUUID->"f56b93ab-ab37-493a-ac7d-f63071270be7"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["GroupMath Tutorial"]],"paclet:GroupMath/tutorial/GroupMathDoc"},
+  "RefLink",
+  BaseStyle->"Tutorials"]], "Tutorials",
+ CellID->341631938,ExpressionUUID->"35ef4674-97a8-4e8d-8507-13afb1ab4f3f"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"cf3b10b0-9087-4988-bf4b-5f628ec70a38"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]],ExpressionUUID->"5e5b6839-6a52-4cb1-a537-fb7a697d4bab"],
+ "Related Links"
+}], "RelatedLinksSection",
+ WholeCellGroupOpener->True,
+ CellID->1584193535,ExpressionUUID->"c8c8e1ae-fcd2-4036-ab3e-8d6335268db0"],
+
+Cell["", "SectionHeaderSpacer",ExpressionUUID->"1af3aeb1-fca2-4383-9853-2ef3bbd4f23a"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["Adjoint"]],"paclet:GroupMath/ref/Adjoint"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula",ExpressionUUID->
+  "c21caa9e-8990-41a5-ba7c-8b719c5ccbe7"],
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]", 
+  "InlineSeparator"],
+ " ",
+ Cell[BoxData[
+  TemplateBox[{Cell[
+     TextData["Casimir"]],"paclet:GroupMath/ref/Casimir"},
+   "RefLink",
+   BaseStyle->{"InlineFormula"}]], "InlineFormula",ExpressionUUID->
+  "5ea364f4-ff77-48f0-800d-02c3737f8394"]
+}], "SeeAlso",
+ CellID->1038487239,ExpressionUUID->"536e7fcf-8003-41d1-be92-aafdeb766d88"]
+}, Open  ]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"4d29d8aa-b48b-4dc2-883e-6e98e2fa5d83"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"DynkinIndex",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "Mathematica", ButtonData -> "paclet:GroupMath/guide/GroupMath", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2020, 3, 20, 20, 19, 39.1800243}", 
+    "history" -> {"1.0", "", "", ""}, "context" -> "GroupMath`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Group Math Symbol", "language" -> "en", "paclet" -> "GroupMath", 
+    "status" -> "None", "summary" -> 
+    "DynkinIndex[group, rep] Computes the Dynkin index of representation rep \
+of group", "synonyms" -> {}, "tabletags" -> {}, "title" -> "DynkinIndex", 
+    "titlemodifier" -> "", "windowtitle" -> "DynkinIndex", "type" -> "Symbol",
+     "uri" -> "GroupMath/ref/DynkinIndex", "WorkflowDockedCell" -> ""}, 
+  "SearchTextTranslated" -> "", "NewStyles" -> False},
+CellContext->"Global`",
+FrontEndVersion->"12.0 for Microsoft Windows (64-bit) (April 8, 2019)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  TaggingRules -> {"NewStyles" -> False}, FrontEndVersion -> 
+  "12.0 for Microsoft Windows (64-bit) (April 8, 2019)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[8466, 233, 435, 11, 35, "PrimaryExamplesSection",ExpressionUUID->"3bfa22d9-1bd3-4a2e-bd12-8887338533b7",
+   CellTags->"PrimaryExamplesSection",
+   CellID->474541172]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 37868, 869}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[583, 21, 3448, 77, 53, "AnchorBarGrid",ExpressionUUID->"e86c8c7c-095f-46bf-96f0-a9bd9534c9e6",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4056, 102, 396, 9, 52, "ObjectNameGrid",ExpressionUUID->"837795ab-9ae5-4392-8567-a9f014488d49"],
+Cell[4455, 113, 779, 18, 110, "Usage",ExpressionUUID->"9310f3eb-34a1-45c5-a64d-085115a32b72",
+ CellID->982511436]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5271, 136, 853, 21, 37, "NotesSection",ExpressionUUID->"bc8a8b68-1775-4d19-b631-945e1746e77d",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->9898841],
+Cell[6127, 159, 86, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"3e0a0d90-91e8-4223-bc78-6e215769b8b5"],
+Cell[6216, 161, 330, 10, 70, "Notes",ExpressionUUID->"2a7cd6de-efcd-4e55-a779-8d43d95935d0",
+ CellID->1067943069],
+Cell[6549, 173, 509, 13, 70, "Notes",ExpressionUUID->"402aa7ad-20a6-44fb-8513-57d51de1311b",
+ CellID->638839415],
+Cell[7061, 188, 524, 15, 70, "Notes",ExpressionUUID->"7ef7aeb1-7f1d-4599-86c9-971bc078e994",
+ CellID->110993762],
+Cell[7588, 205, 752, 21, 70, "Notes",ExpressionUUID->"b18b78e3-ec6a-4b57-bafb-4b06bd73afc3",
+ CellID->634968245],
+Cell[8343, 228, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"6fa8d664-ba5b-4284-ade5-b2c0d9dfb4b2"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[8466, 233, 435, 11, 35, "PrimaryExamplesSection",ExpressionUUID->"3bfa22d9-1bd3-4a2e-bd12-8887338533b7",
+ CellTags->"PrimaryExamplesSection",
+ CellID->474541172],
+Cell[CellGroupData[{
+Cell[8926, 248, 307, 7, 29, "ExampleSection",ExpressionUUID->"070f27f8-17e6-4a6b-8bad-bede6d14aad4",
+ CellID->67842181],
+Cell[9236, 257, 340, 8, 63, "ExampleText",ExpressionUUID->"245c279e-6540-4232-9f6b-d993268f8f0e",
+ CellID->4632706],
+Cell[CellGroupData[{
+Cell[9601, 269, 971, 22, 75, "Input",ExpressionUUID->"db582094-1651-454e-8df7-dcb7813b8ad9",
+ CellID->198201436],
+Cell[CellGroupData[{
+Cell[10597, 295, 382, 9, 40, "Print",ExpressionUUID->"6af1f81e-c435-4ad6-a053-357f1c5c9fea",
+ CellID->16171692],
+Cell[10982, 306, 382, 9, 40, "Print",ExpressionUUID->"88858654-dded-4164-9c57-54ab07e838cd",
+ CellID->33545871],
+Cell[11367, 317, 382, 9, 40, "Print",ExpressionUUID->"ae13be6d-2454-4a2f-ae79-4bfe72fb9910",
+ CellID->32003834],
+Cell[11752, 328, 382, 9, 40, "Print",ExpressionUUID->"280874d9-2a8f-412c-bb74-805067ade10c",
+ CellID->54632386]
+}, Open  ]]
+}, Open  ]],
+Cell[12161, 341, 227, 4, 57, "ExampleText",ExpressionUUID->"e4aa1a94-c20b-427d-8276-b4a8c2d2e952",
+ CellID->96642750],
+Cell[CellGroupData[{
+Cell[12413, 349, 1202, 32, 75, "Input",ExpressionUUID->"bb0e84bd-41b0-447d-97f6-81dee114d408",
+ CellID->126609898],
+Cell[CellGroupData[{
+Cell[13640, 385, 383, 9, 70, "Print",ExpressionUUID->"d7ced718-996f-4ac3-8acd-48342d142750",
+ CellID->374147891],
+Cell[14026, 396, 383, 9, 70, "Print",ExpressionUUID->"bc7e2e95-8aee-4ecc-b8c9-5d9031b8cc64",
+ CellID->141311577],
+Cell[14412, 407, 383, 9, 70, "Print",ExpressionUUID->"532f3dd8-326a-47b6-b8ea-6e31a41b13d4",
+ CellID->466670959],
+Cell[14798, 418, 383, 9, 70, "Print",ExpressionUUID->"003ae4ed-37f5-47c0-a97e-8f8248808538",
+ CellID->230418556]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15230, 433, 241, 5, 70, "ExampleDelimiter",ExpressionUUID->"9354133a-4711-4bd0-9d38-cab0b78eca3d",
+ CellID->51641276],
+Cell[15474, 440, 804, 22, 70, "Notes",ExpressionUUID->"eb744c3b-68b7-423c-82b6-7969262e6f3f",
+ CellID->26871987],
+Cell[CellGroupData[{
+Cell[16303, 466, 187, 4, 70, "Input",ExpressionUUID->"97ae8ba8-7d00-4151-bad4-2882af705499",
+ CellID->638777469],
+Cell[16493, 472, 126, 2, 35, "Output",ExpressionUUID->"4b8d65ba-f51c-4082-bac0-67ba964378a4",
+ CellID->435726647]
+}, Open  ]],
+Cell[16634, 477, 209, 4, 70, "Notes",ExpressionUUID->"c73959e6-2b7e-48f5-ab6c-5122b0ecd748",
+ CellID->206561630],
+Cell[CellGroupData[{
+Cell[16868, 485, 307, 7, 70, "Input",ExpressionUUID->"9b263be6-5355-4cab-b8ad-3a8e8bf2403a",
+ CellID->109344574],
+Cell[17178, 494, 184, 4, 35, "Output",ExpressionUUID->"98d4c8f8-eaec-40a9-8eb8-0271c697df60",
+ CellID->100571087]
+}, Open  ]],
+Cell[17377, 501, 573, 15, 70, "Notes",ExpressionUUID->"f76fcb5d-eae2-4458-965d-460d4af4e8ce",
+ CellID->284108355],
+Cell[CellGroupData[{
+Cell[17975, 520, 423, 12, 70, "Input",ExpressionUUID->"d2b66c46-bd99-4f18-8d73-2db4728fc97e",
+ CellID->482268689],
+Cell[18401, 534, 15534, 223, 798, "Output",ExpressionUUID->"f0ba3ce3-8779-4771-96e5-e29a6e8e2d99",
+ CellID->753864196]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[33974, 762, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"ba037bba-4117-43c6-b756-b4666484e120"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[34097, 767, 262, 7, 70, "TutorialsSection",ExpressionUUID->"54851f80-a71d-499f-9104-ea04b04e8035",
+ CellID->250839057],
+Cell[34362, 776, 86, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"f56b93ab-ab37-493a-ac7d-f63071270be7"],
+Cell[34451, 778, 241, 5, 70, "Tutorials",ExpressionUUID->"35ef4674-97a8-4e8d-8507-13afb1ab4f3f",
+ CellID->341631938],
+Cell[34695, 785, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"cf3b10b0-9087-4988-bf4b-5f628ec70a38"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[34818, 790, 270, 7, 70, "RelatedLinksSection",ExpressionUUID->"c8c8e1ae-fcd2-4036-ab3e-8d6335268db0",
+ CellID->1584193535],
+Cell[35091, 799, 86, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"1af3aeb1-fca2-4383-9853-2ef3bbd4f23a"],
+Cell[35180, 801, 664, 18, 70, "SeeAlso",ExpressionUUID->"536e7fcf-8003-41d1-be92-aafdeb766d88",
+ CellID->1038487239]
+}, Open  ]],
+Cell[35859, 822, 78, 0, 70, "FooterCell",ExpressionUUID->"4d29d8aa-b48b-4dc2-883e-6e98e2fa5d83"]
+}
+]
+*)
+
+(* End of internal cache information *)
+

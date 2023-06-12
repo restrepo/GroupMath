@@ -3,7 +3,7 @@
 (* ::Input::Initialization:: *)
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-NullMatrix[n_,m_]:=Array[0&,{n,m}];
+NullMatrix[n_,m_]:=ConstantArray[0,{n,m}];
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
@@ -738,5 +738,17 @@ result[[pos[[1]];;(pos+dims[[i]])[[1]]-1,pos[[2]];;(pos+dims[[i]])[[2]]-1,pos[[3
 pos+=dims[[i]];
 ,{i,Length[blocks]}];
 
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+(* ComplementWithMultiplicity[{A,B,B,B,X,C,A,B,B},{B},{B,A,A,C,B,,C}] = {B,B,X} *)
+ComplementWithMultiplicity[lists__]:=Module[{list1,otherLists,aux,result},
+list1={lists}[[1]];
+otherLists=Flatten[{lists}[[2;;-1]]];
+
+aux=TallyWithMultiplicity[Join[Tally[list1],{#[[1]],-#[[2]]}&/@Tally[otherLists]]];
+result=Flatten[ConstantArray@@@DeleteCases[aux,x_/;x[[2]]<=0]];
 Return[result];
 ]

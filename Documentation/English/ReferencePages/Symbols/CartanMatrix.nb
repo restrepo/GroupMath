@@ -1,0 +1,1126 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 12.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     39736,       1116]
+NotebookOptionsPosition[     30255,        913]
+NotebookOutlinePosition[     32501,        971]
+CellTagsIndexPosition[     32416,        966]
+WindowTitle->CartanMatrix
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[GridBox[{
+   {Cell["GROUP MATH SYMBOL", "PacletNameCell",ExpressionUUID->
+     "3e6e8995-4137-4b16-b96f-1089b309eabb"], Cell[TextData[{
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "Tutorials",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }],ExpressionUUID->"1c380044-1611-442b-895d-500feb5102b1"],
+         TextCell[
+          Row[{"Tutorials", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"GroupMath Tutorial\"\>":>
+       Documentation`HelpLookup["paclet:GroupMath/tutorial/GroupMathDoc"]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"Tutorials"]],
+      LineSpacing->{1.4, 0},ExpressionUUID->
+      "d085a240-2407-46ca-9e6b-3d4590db4632"],
+     "\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\[ThickSpace]\
+\[ThickSpace]",
+     Cell[BoxData[
+      ActionMenuBox[
+       FrameBox[
+        InterpretationBox[Cell[TextData[{
+          "URL",
+          StyleBox[" \[FilledDownTriangle]", "AnchorBarArrow",
+           StripOnInput->False]
+         }],ExpressionUUID->"8e2a93c7-c01f-4c42-b58f-3cd18d603e2e"],
+         TextCell[
+          Row[{"URL", 
+            Style[" \[FilledDownTriangle]", "AnchorBarArrow"]}]]],
+        StripOnInput->False], {"\<\"GroupMath/ref/CartanMatrix\"\>":>
+       None, "\<\"Copy Wolfram Documentation Center URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell["GroupMath/ref/CartanMatrix"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; Null], 
+       Delimiter, "\<\"Copy web URL\"\>":>
+       Module[{DocumentationSearch`Private`nb$}, 
+        DocumentationSearch`Private`nb$ = NotebookPut[
+           Notebook[{
+             Cell[
+              BoxData[
+               MakeBoxes[
+                Hyperlink[
+                "http://reference.wolfram.com/language/GroupMath/ref/\
+CartanMatrix.html"], StandardForm]], "Input", TextClipboardType -> 
+              "PlainText"]}, Visible -> False]]; 
+        SelectionMove[DocumentationSearch`Private`nb$, All, Notebook]; 
+        FrontEndTokenExecute[DocumentationSearch`Private`nb$, "Copy"]; 
+        NotebookClose[DocumentationSearch`Private`nb$]; 
+        Null], "\<\"Go to web URL\"\>":>FrontEndExecute[{
+         NotebookLocate[{
+           URL[
+            StringJoin[
+             If[
+              TrueQ[DocumentationBuild`Make`Private`wsmlinkQ$8911], 
+              "http://reference.wolfram.com/system-modeler/", 
+              "http://reference.wolfram.com/language/"], 
+             "GroupMath/ref/CartanMatrix", ".html"]], None}]}]},
+       Appearance->None,
+       MenuAppearance->Automatic,
+       MenuStyle->"URLMenu"]],
+      LineSpacing->{1.4, 0},ExpressionUUID->
+      "35b9fb9a-38f5-4897-aaaf-8c6a7f919c33"]
+    }], "AnchorBar",ExpressionUUID->"25f316a3-1db9-48ee-b1c4-e267c74df7e6"]}
+  }]], "AnchorBarGrid",
+ GridBoxOptions->{GridBoxItemSize->{"Columns" -> {
+     Scaled[0.65], {
+      Scaled[0.34]}}, "ColumnsIndexed" -> {}, "Rows" -> {{1.}}, 
+   "RowsIndexed" -> {}}},
+ CellID->1,ExpressionUUID->"bbe0c2fc-75e6-465c-914e-db630fbc8a43"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell["CartanMatrix", "ObjectName",ExpressionUUID->
+  "2ef7b650-b027-4f8a-a626-5ee233e6a067"],
+ Cell[BoxData[
+  TemplateBox[{8},
+   "Spacer1"]],ExpressionUUID->"f95b756b-2af0-46d3-bacb-4d664475ccf0"],
+ Cell[BoxData[
+ ""], "ObjectNameTranslation",ExpressionUUID->
+  "46b09c3f-ad63-4683-a086-ec5e50a09c03"]
+}], "ObjectNameGrid",ExpressionUUID->"e63791a0-eb2a-48cd-b0eb-f5ddb53a1449"],
+
+Cell[BoxData[GridBox[{
+   {"", Cell[TextData[{
+     Cell[BoxData[
+      RowBox[{"CartanMatrix", "[", 
+       RowBox[{"\"\<group family name\>\"", ",", 
+        RowBox[{"family", " ", "index"}]}], "]"}]], "InlineFormula",
+      ExpressionUUID->"dda7b00d-c6a7-47d2-82c6-4a053f836fcc"],
+     " \[LineSeparator]Returns the Cartan matrix of a simple group, given its \
+name"
+    }],ExpressionUUID->"f07e2f6c-91ca-41c6-aae2-cc7b7eb73e7c"]}
+  }]], "Usage",
+ GridBoxOptions->{
+ GridBoxBackground->{"Columns" -> {{None}}, "Rows" -> {{None}}}},
+ CellID->982511436,ExpressionUUID->"1e02244b-7cbf-4e0a-97b6-1a1d1760a606"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[Cell[BoxData[
+ ButtonBox[Cell[TextData[{
+   Cell[BoxData[
+    TemplateBox[{6},
+     "Spacer1"]],ExpressionUUID->"f86c4989-cfe0-400a-8467-0789687b3c3d"],
+   "Details"
+  }], "NotesFrameText",ExpressionUUID->"2e39d145-0cb3-4ad9-9b77-9b26f5acecb4"],
+  Appearance->{Automatic, None, "Normal", Automatic},
+  BaseStyle->None,
+  ButtonFunction:>(FrontEndExecute[{
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], All, ButtonCell], 
+     FrontEndToken["OpenCloseGroup"], 
+     FrontEnd`SelectionMove[
+      FrontEnd`SelectedNotebook[], After, CellContents]}]& ),
+  Evaluator->None,
+  Method->
+   "Preemptive"]],ExpressionUUID->"870b1982-b145-46ad-8886-852408e3ae50"]], \
+"NotesSection",
+ WholeCellGroupOpener->True,
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->459846323,ExpressionUUID->"413fedad-90da-459b-9300-e46d1f0aa49e"],
+
+Cell["", "SectionHeaderSpacer",ExpressionUUID->"91e1582d-29e6-43d6-b8f1-7dca13179af4"],
+
+Cell[TextData[{
+ Cell[BoxData[
+ "\"\<group family name\>\""], "InlineFormula",ExpressionUUID->
+  "131bff47-a47d-4d3c-bb35-ac7bfdd2c64b"],
+ " can be ",
+ Cell[BoxData[
+ "\"\<SU\>\""], "InlineFormula",ExpressionUUID->
+  "80293899-09d7-475a-880f-d3d7eb7493c9"],
+ ", ",
+ Cell[BoxData[
+ "\"\<SO\>\""], "InlineFormula",ExpressionUUID->
+  "565b42d5-e1d0-4fab-bddd-8c62ac2e1556"],
+ ", ",
+ Cell[BoxData[
+ "\"\<SP\>\""], "InlineFormula",ExpressionUUID->
+  "90744f03-50e4-4819-ab7d-3cf7253b2ce1"],
+ ", ",
+ Cell[BoxData[
+ "\"\<E\>\""], "InlineFormula",ExpressionUUID->
+  "9247af6a-2182-4196-b461-561f62adfe0d"],
+ ", ",
+ Cell[BoxData[
+ "\"\<F\>\""], "InlineFormula",ExpressionUUID->
+  "dfd97115-37a6-4d1b-8d66-3b30a3a3dbfb"],
+ " or ",
+ Cell[BoxData[
+ "\"\<G\>\""], "InlineFormula",ExpressionUUID->
+  "6b041c82-f7d7-40f3-aea7-bfaeb21a7ea5"],
+ " (the method is not case sensitive)."
+}], "Notes",
+ CellID->1067943069,ExpressionUUID->"ee9a85b8-13ce-45c9-9cda-f2838f3edd93"],
+
+Cell[TextData[{
+ Cell[BoxData[
+  RowBox[{"family", " ", "index"}]], "InlineFormula",ExpressionUUID->
+  "14708467-6380-4e18-b2a6-666a48025b0e"],
+ " should be an integer describing the group's index in its family: SU(n) | \
+n=2,3,...; SO(n) | n=3,5,6,7,... [SO(4) is not simple]; SP(n) | \
+n=2,4,6,8,...; F(n) | n=4 only; G(n) | n=2 only; E(n) | n=6,7,8."
+}], "Notes",
+ CellID->134456772,ExpressionUUID->"818bcea7-e59c-4b2f-a164-4f6ec54f34ab"],
+
+Cell[TextData[{
+ "In GroupMath, a simple Lie group is specified by its Cartan matrix. To \
+avoid repeated use of this ",
+ Cell[BoxData[
+ "CartanMatrix"], "InlineFormula",ExpressionUUID->
+  "a58874d7-64f4-4c97-9c6d-ed3a79f6651a"],
+ " method, the program automatically assigns to some variables with names of \
+groups the corresponding Cartan matrix. For example the variable ",
+ Cell[BoxData[
+ "SU3"], "InlineFormula",ExpressionUUID->
+  "d65c232f-8077-4017-94de-fd440e04a256"],
+ " is equal to ",
+ Cell[BoxData[
+  RowBox[{"CartanMatrix", "[", 
+   RowBox[{"\"\<SU\>\"", ",", "3"}], "]"}]], "InlineFormula",ExpressionUUID->
+  "4cc8a8ff-b8b1-4943-9d7c-d50c1eda8073"],
+ " which is a 2x2 matrix."
+}], "Notes",
+ CellID->397766052,ExpressionUUID->"80d5d15c-88ca-4911-8a7b-368df63acea6"],
+
+Cell[TextData[{
+ "The complete list of variable that are set by GroupMath is: ",
+ Cell[BoxData[
+ "SU2"], "InlineFormula",ExpressionUUID->
+  "3520f35e-00f9-4f3b-9fb8-9b7e9b3110e8"],
+ ", ",
+ Cell[BoxData[
+ "SU3"], "InlineFormula",ExpressionUUID->
+  "7e76a05d-155c-49f9-b7c8-7bc63964f53f"],
+ ",...; ",
+ Cell[BoxData[
+ "SO3"], "InlineFormula",ExpressionUUID->
+  "fff45d73-1660-4d93-9c88-4e388b461aea"],
+ ", ",
+ Cell[BoxData[
+ "SO5"], "InlineFormula",ExpressionUUID->
+  "1a66ff2d-6c01-40f0-a6a7-7f4e7ad4f79a"],
+ ",",
+ Cell[BoxData[
+ "SO6"], "InlineFormula",ExpressionUUID->
+  "f4c6c4e0-7bed-4f15-9449-a51b8df5e35a"],
+ ",",
+ Cell[BoxData[
+ "SO7"], "InlineFormula",ExpressionUUID->
+  "c66d0f76-05f9-47d2-948f-3c8427920250"],
+ ",...; ",
+ Cell[BoxData[
+ "SP2"], "InlineFormula",ExpressionUUID->
+  "268dc3b1-6a79-4698-baec-7bf5a0da78e6"],
+ ",",
+ Cell[BoxData[
+ "SP4"], "InlineFormula",ExpressionUUID->
+  "f1963950-1a48-40e3-9a1b-8ff3252592c2"],
+ ",",
+ Cell[BoxData[
+ "SP6"], "InlineFormula",ExpressionUUID->
+  "5adcff95-4d14-4b22-94d8-370ec5e661ea"],
+ ",...; ",
+ Cell[BoxData[
+ "G2"], "InlineFormula",ExpressionUUID->
+  "dcc1839c-6da6-47e5-991c-798e5832078f"],
+ ",",
+ Cell[BoxData[
+ "F4"], "InlineFormula",ExpressionUUID->
+  "a332c60a-b423-4cd9-b343-77df06ce5253"],
+ ",",
+ Cell[BoxData[
+ "E6"], "InlineFormula",ExpressionUUID->
+  "db23b3bc-ec92-49f3-8ae0-61af6944bf14"],
+ ",",
+ Cell[BoxData[
+ "E7"], "InlineFormula",ExpressionUUID->
+  "b6384639-ae39-4e47-afdb-e866b0246ef8"],
+ ",",
+ Cell[BoxData[
+ "E8"], "InlineFormula",ExpressionUUID->
+  "f4046d19-47b5-422d-a105-82d287448d94"],
+ ". Variations such as ",
+ Cell[BoxData[
+ "Su3"], "InlineFormula",ExpressionUUID->
+  "e1259ee8-f6b5-40fd-a87f-d0d103503f42"],
+ ", ",
+ Cell[BoxData[
+ "su3"], "InlineFormula",ExpressionUUID->
+  "521a9c31-5b81-4388-aaaa-815ad3c1810b"],
+ " (but not ",
+ Cell[BoxData[
+ "sU3"], "InlineFormula",ExpressionUUID->
+  "e127a7a4-3432-4469-9b1c-65ef944eb5cb"],
+ ") have also been assigned."
+}], "Notes",
+ CellID->291147927,ExpressionUUID->"fc61e0a8-fda6-4ea7-abb3-078e16b8fdc8"],
+
+Cell[TextData[{
+ "While U(1) is not a simple group, the program defines ",
+ Cell[BoxData[
+  RowBox[{"CartanMatrix", "[", 
+   RowBox[{"\"\<U\>\"", ",", "1"}], "]"}]], "InlineFormula",ExpressionUUID->
+  "7368c55f-392b-40f3-8805-5eda7cffe480"],
+ " ",
+ Cell[BoxData[
+  RowBox[{"=", 
+   RowBox[{
+    RowBox[{"CartanMatrix", "[", 
+     RowBox[{"\"\<u\>\"", ",", "1"}], "]"}], " ", "=", " ", 
+    RowBox[{"U1", " ", "=", " ", 
+     RowBox[{"u1", " ", "=", " ", 
+      RowBox[{"{", "}"}]}]}]}]}]], "InlineFormula",ExpressionUUID->
+  "cd7dcf6b-fda8-4143-a2df-93408ccadd0a"],
+ "."
+}], "Notes",
+ CellID->421381903,ExpressionUUID->"2553a0d2-11eb-462c-8a8f-8fd6787efc40"],
+
+Cell["\<\
+Rigorously, a Cartan matrix defines a complex simple Lie \
+algebra\[LongDash]not a group. However, to keep things simple this abuse of \
+terminology is carried out here and throughout GroupMath's documentation.\
+\>", "Notes",
+ CellID->442451699,ExpressionUUID->"499dd80a-5c19-4847-a53e-89afdf9eabf4"],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"f8feb781-71d7-47a0-b2fd-b46ee1ad6622"]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]],ExpressionUUID->"691a8f3d-e090-4372-b847-a47c6cca25d7"],
+ "Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(4)", "ExampleCount",ExpressionUUID->
+  "77ff8e36-1556-4600-ba7c-22b61f59f13f"]
+}], "PrimaryExamplesSection",
+ WholeCellGroupOpener->True,
+ CellTags->"PrimaryExamplesSection",
+ CellID->3209156,ExpressionUUID->"1ee3df3f-d1fe-4b09-8f9c-156d8099051c"],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Basic Examples",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(2)", "ExampleCount",ExpressionUUID->
+  "a08270b1-a673-47aa-859a-6b8701025494"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CellID->94114136,ExpressionUUID->"2dd37eee-3075-44ba-bbf0-cf9743d77486"],
+
+Cell["The SU(3) group is defined by its 2x2 Cartan matrix ...", "ExampleText",
+ CellID->291330644,ExpressionUUID->"775ad724-81cc-4d0c-b907-10e1323a37de"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"CartanMatrix", "[", 
+   RowBox[{"\"\<SU\>\"", ",", "3"}], "]"}], " ", "//", 
+  "MatrixForm"}]], "Input",
+ CellLabel->"In[1]:=",
+ CellID->616364856,ExpressionUUID->"5ca1b0d0-52b6-4f48-85b5-92afcb3a2b1c"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"2", 
+      RowBox[{"-", "1"}]},
+     {
+      RowBox[{"-", "1"}], "2"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellLabel->"Out[1]//MatrixForm=",
+ CellID->645347224,ExpressionUUID->"df6c6351-d2d6-49ab-b8c5-f53af7b110d5"]
+}, Open  ]],
+
+Cell["... which is the same as any of these variables:", "ExampleText",
+ CellID->192904258,ExpressionUUID->"176f2d38-1b8a-46de-804e-9f1c8d7f0324"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"SU3", "//", "MatrixForm"}], "\[IndentingNewLine]", 
+ RowBox[{"Su3", "//", "MatrixForm"}], "\[IndentingNewLine]", 
+ RowBox[{"su3", "//", "MatrixForm"}]}], "Input",
+ CellLabel->"In[2]:=",
+ CellID->703238829,ExpressionUUID->"d95ebf16-c983-4b1b-94e3-36b32fd82031"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"2", 
+      RowBox[{"-", "1"}]},
+     {
+      RowBox[{"-", "1"}], "2"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellLabel->"Out[2]//MatrixForm=",
+ CellID->211364966,ExpressionUUID->"d58ad805-7682-4b5e-809a-91ef060bb328"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"2", 
+      RowBox[{"-", "1"}]},
+     {
+      RowBox[{"-", "1"}], "2"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellLabel->"Out[2]//MatrixForm=",
+ CellID->75385587,ExpressionUUID->"5d6b74a8-c46d-421a-93c9-56aa73c77d30"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"2", 
+      RowBox[{"-", "1"}]},
+     {
+      RowBox[{"-", "1"}], "2"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[BoxForm`e$]]]], "Output",
+ CellLabel->"Out[2]//MatrixForm=",
+ CellID->902261128,ExpressionUUID->"952cd089-f0a0-4644-b212-341622c828e4"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ InterpretationBox[Cell[
+  "\t", "ExampleDelimiter",ExpressionUUID->
+   "8da3ae65-68dc-492e-a48a-c49c733a8fee"],
+  $Line = 0; Null]], "ExampleDelimiter",
+ CellID->307500095,ExpressionUUID->"81bb5563-35b6-4bc9-922a-b81438e010ed"],
+
+Cell["Other examples:", "ExampleText",
+ CellID->81414641,ExpressionUUID->"f040f9b5-65e2-4bc1-a420-56cff16912c1"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"CartanMatrix", "[", 
+  RowBox[{"\"\<E\>\"", ",", "7"}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"CartanMatrix", "[", 
+  RowBox[{"\"\<so\>\"", ",", "10"}], "]"}]}], "Input",
+ CellLabel->"In[1]:=",
+ CellID->595334560,ExpressionUUID->"06426338-73f5-4efe-8343-e2a4143a8d24"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"2", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "0", ",", "0", ",", "0", ",", "0"}], 
+    "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"-", "1"}], ",", "2", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", 
+     RowBox[{"-", "1"}], ",", "2", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "0", ",", 
+     RowBox[{"-", "1"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", 
+     RowBox[{"-", "1"}], ",", "2", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "0", ",", 
+     RowBox[{"-", "1"}], ",", "2", ",", 
+     RowBox[{"-", "1"}], ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", "0", ",", "0", ",", 
+     RowBox[{"-", "1"}], ",", "2", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "0", ",", "0", ",", "2"}], "}"}]}], 
+  "}"}]], "Output",
+ CellLabel->"Out[1]=",
+ CellID->82615891,ExpressionUUID->"273b85e9-b4b7-4bb9-ba71-9145c5bc852b"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"2", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "0", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"-", "1"}], ",", "2", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", 
+     RowBox[{"-", "1"}], ",", "2", ",", 
+     RowBox[{"-", "1"}], ",", 
+     RowBox[{"-", "1"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", 
+     RowBox[{"-", "1"}], ",", "2", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "0", ",", 
+     RowBox[{"-", "1"}], ",", "0", ",", "2"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[1]=",
+ CellID->151624854,ExpressionUUID->"c6f7434c-6260-46da-86b0-3ae864da6c97"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Properties & Relations",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "7a4677cd-d81b-4943-b8ea-bb878d8f1810"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CellID->2123667759,ExpressionUUID->"f29282b2-f513-4e2b-9027-c0c6ed1df69b"],
+
+Cell["\<\
+SU(2), SP(2), SO(3) are isomorphic. SO(6) and SU(4) are too (interchange row \
+1 <-> row 2 and column 1 <-> column 2). SP(4) and SO(5) are also isomorphic \
+(interchange row 1<-> row 2 and column 1 <-> column 2):\
+\>", "ExampleText",
+ CellID->309776557,ExpressionUUID->"440859bc-1e90-4d1b-b06c-0727e52998db"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"Print", "[", "\"\<SU2; SP2; SO3:\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Print", "[", 
+  RowBox[{
+   RowBox[{"SU2", "//", "MatrixForm"}], ",", "\"\<;\>\"", ",", 
+   RowBox[{"SP2", "//", "MatrixForm"}], ",", "\"\<;\>\"", ",", 
+   RowBox[{"SO3", "//", "MatrixForm"}]}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", "\"\<SO6; SU4:\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Print", "[", 
+  RowBox[{
+   RowBox[{"SO6", "//", "MatrixForm"}], ",", "\"\<;\>\"", ",", 
+   RowBox[{"SU4", "//", "MatrixForm"}]}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"Print", "[", "\"\<SP4; SO5:\>\"", "]"}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{"Print", "[", 
+  RowBox[{
+   RowBox[{"SP4", "//", "MatrixForm"}], ",", "\"\<;\>\"", ",", 
+   RowBox[{"SO5", "//", "MatrixForm"}]}], "]"}]}], "Input",
+ CellLabel->"In[1]:=",
+ CellID->35929978,ExpressionUUID->"5037f55d-6fad-4f15-9d97-a6d42c9dbe32"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData["\<\"SU2; SP2; SO3:\"\>"], "Print",
+ CellLabel->"During evaluation of In[19]:=",
+ CellID->43469708,ExpressionUUID->"e0426082-69df-4e63-b95a-cb3ab8657630"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"2"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]], "\[InvisibleSpace]", "\<\";\"\>", 
+   "\[InvisibleSpace]", 
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"2"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]], "\[InvisibleSpace]", "\<\";\"\>", 
+   "\[InvisibleSpace]", 
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"2"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]]}],
+  SequenceForm[
+   MatrixForm[{{2}}], ";", 
+   MatrixForm[{{2}}], ";", 
+   MatrixForm[{{2}}]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[19]:=",
+ CellID->264495936,ExpressionUUID->"502eb395-cdfa-4c3e-aefe-078fad937ffa"],
+
+Cell[BoxData["\<\"SO6; SU4:\"\>"], "Print",
+ CellLabel->"During evaluation of In[19]:=",
+ CellID->496912657,ExpressionUUID->"58ff4ef7-c2a7-4a19-966e-cd27776d60b2"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"2", 
+        RowBox[{"-", "1"}], 
+        RowBox[{"-", "1"}]},
+       {
+        RowBox[{"-", "1"}], "2", "0"},
+       {
+        RowBox[{"-", "1"}], "0", "2"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]], "\[InvisibleSpace]", "\<\";\"\>", 
+   "\[InvisibleSpace]", 
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"2", 
+        RowBox[{"-", "1"}], "0"},
+       {
+        RowBox[{"-", "1"}], "2", 
+        RowBox[{"-", "1"}]},
+       {"0", 
+        RowBox[{"-", "1"}], "2"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]]}],
+  SequenceForm[
+   MatrixForm[{{2, -1, -1}, {-1, 2, 0}, {-1, 0, 2}}], ";", 
+   MatrixForm[{{2, -1, 0}, {-1, 2, -1}, {0, -1, 2}}]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[19]:=",
+ CellID->552253896,ExpressionUUID->"cf4d4fa8-ba9b-42e3-a78b-7dcefa75c5cb"],
+
+Cell[BoxData["\<\"SP4; SO5:\"\>"], "Print",
+ CellLabel->"During evaluation of In[19]:=",
+ CellID->4096164,ExpressionUUID->"9eb58eb3-42fe-4d25-8d35-2e701541fc0e"],
+
+Cell[BoxData[
+ InterpretationBox[
+  RowBox[{
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"2", 
+        RowBox[{"-", "1"}]},
+       {
+        RowBox[{"-", "2"}], "2"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]], "\[InvisibleSpace]", "\<\";\"\>", 
+   "\[InvisibleSpace]", 
+   TagBox[
+    RowBox[{"(", "\[NoBreak]", GridBox[{
+       {"2", 
+        RowBox[{"-", "2"}]},
+       {
+        RowBox[{"-", "1"}], "2"}
+      },
+      GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+      GridBoxSpacings->{"Columns" -> {
+          Offset[0.27999999999999997`], {
+           Offset[0.7]}, 
+          Offset[0.27999999999999997`]}, "Rows" -> {
+          Offset[0.2], {
+           Offset[0.4]}, 
+          Offset[0.2]}}], "\[NoBreak]", ")"}],
+    Function[BoxForm`e$, 
+     MatrixForm[BoxForm`e$]]]}],
+  SequenceForm[
+   MatrixForm[{{2, -1}, {-2, 2}}], ";", 
+   MatrixForm[{{2, -2}, {-1, 2}}]],
+  Editable->False]], "Print",
+ CellLabel->"During evaluation of In[19]:=",
+ CellID->95660973,ExpressionUUID->"aa58056c-c36a-465d-911a-e174fda51c25"]
+}, Open  ]]
+}, Open  ]]
+}, Closed]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ "Possible Issues",
+ "\[NonBreakingSpace]\[NonBreakingSpace]",
+ Cell["(1)", "ExampleCount",ExpressionUUID->
+  "beae25b6-73e8-49b9-b7ef-71927499f7e7"]
+}], "ExampleSection", "ExampleSection",
+ WholeCellGroupOpener->True,
+ CellID->1305812373,ExpressionUUID->"7e9b0108-5202-4a03-8fbd-80ee3024a70c"],
+
+Cell["There is no SU(1) group, nor ABC(100):", "ExampleText",
+ CellID->153586851,ExpressionUUID->"7320854c-a214-48ae-a226-5fd0112ece08"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"CartanMatrix", "[", 
+  RowBox[{"\"\<SU\>\"", ",", "1"}], "]"}], "\[IndentingNewLine]", 
+ RowBox[{"CartanMatrix", "[", 
+  RowBox[{"\"\<ABC\>\"", ",", "100"}], "]"}]}], "Input",
+ CellLabel->"In[1]:=",
+ CellID->152761480,ExpressionUUID->"d1cd2c56-31ab-4668-806d-ea4329a3c235"],
+
+Cell[BoxData["\<\"Unknown simple lie algebra. Try SU(n) [n>1],SO(n) [n=3 or \
+>4],Sp(2n) [n>1] or the exceptionals G(2),F(4),E(6),E(7),E(8).\"\>"], "Output",
+ CellLabel->"Out[1]=",
+ CellID->172876918,ExpressionUUID->"49e22965-d3c5-43da-81f0-329c5ec592bc"],
+
+Cell[BoxData["\<\"Unknown simple lie algebra. Try SU(n) [n>1],SO(n) [n=3 or \
+>4],Sp(2n) [n>1] or the exceptionals G(2),F(4),E(6),E(7),E(8).\"\>"], "Output",
+ CellLabel->"Out[1]=",
+ CellID->248329782,ExpressionUUID->"df8ac435-2c48-439c-9b79-f7ce31da5d16"]
+}, Open  ]],
+
+Cell["\<\
+On the other hand, note that SO(4) is not a simple group hence its Cartan \
+matrix is block diagonal:\
+\>", "ExampleText",
+ CellID->139325103,ExpressionUUID->"05465472-d5a5-45db-a827-4de036c9d382"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"CartanMatrix", "[", 
+  RowBox[{"\"\<SO\>\"", ",", "4"}], "]"}]], "Input",
+ CellLabel->"In[2]:=",
+ CellID->565558492,ExpressionUUID->"14c62509-0c78-4c5d-b66c-fe0e3c95c601"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"2", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "2"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[2]=",
+ CellID->454541147,ExpressionUUID->"2d8a035c-58e1-42d1-a6ec-6c2145173519"]
+}, Open  ]],
+
+Cell["\<\
+While some functions might work correctly with this Cartan matrix, in general \
+for non-simple group it is advisable to provide a list of it's factor groups. \
+Hence, instead of CartanMatrix[\"SO\",4],\
+\>", "ExampleText",
+ CellID->331091331,ExpressionUUID->"c612cedb-bf46-4adb-8320-f4907d5feeaf"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"CartanMatrix", "[", 
+  RowBox[{"\"\<SO\>\"", ",", "4"}], "]"}]], "Input",
+ CellLabel->"In[3]:=",
+ CellID->8462184,ExpressionUUID->"f03b48df-feb7-434d-8156-fe7d9c6c5358"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"2", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "2"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[3]=",
+ CellID->306928622,ExpressionUUID->"ba820281-cfd3-4874-83c9-08563b367105"]
+}, Open  ]],
+
+Cell["or ", "ExampleText",
+ CellID->84551968,ExpressionUUID->"f84661e0-4a35-4a3d-87ed-d359a243037e"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"BlockDiagonalMatrix", "[", 
+  RowBox[{"{", 
+   RowBox[{"SU2", ",", "SU2"}], "}"}], "]"}]], "Input",
+ CellLabel->"In[4]:=",
+ CellID->366128562,ExpressionUUID->"46f895be-291f-4eef-823f-52044cf67b58"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"2", ",", "0"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"0", ",", "2"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[4]=",
+ CellID->733743670,ExpressionUUID->"7e387d8e-f3cc-4aaa-8da2-c335d82cc67b"]
+}, Open  ]],
+
+Cell["one should use", "ExampleText",
+ CellID->215996363,ExpressionUUID->"8c5993a8-bee0-4020-a1f5-698e8ca90a41"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"SU2", ",", "SU2"}], "}"}]], "Input",
+ CellLabel->"In[5]:=",
+ CellID->40575268,ExpressionUUID->"fbcc82ad-2b5b-4e44-b9bd-603505e8d389"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"{", "2", "}"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"{", "2", "}"}], "}"}]}], "}"}]], "Output",
+ CellLabel->"Out[5]=",
+ CellID->22142513,ExpressionUUID->"6dd9bdc8-2a57-4bf0-9483-c081eee83e37"]
+}, Open  ]]
+}, Closed]],
+
+Cell["", "SectionFooterSpacer",ExpressionUUID->"c4936a11-077a-4ec9-9a9f-e5d106158055"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[TextData[{
+ Cell[BoxData[
+  TemplateBox[{6},
+   "Spacer1"]],ExpressionUUID->"76e0c5b5-b375-476e-893d-24d8bdb6ffdb"],
+ "Tutorials"
+}], "TutorialsSection",
+ WholeCellGroupOpener->True,
+ CellID->250839057,ExpressionUUID->"9ac87469-96cc-4b57-80fc-fe38fac6e2ea"],
+
+Cell["", "SectionHeaderSpacer",ExpressionUUID->"e083a03d-e333-47bb-9f13-5971d1ff81a9"],
+
+Cell[BoxData[
+ TemplateBox[{Cell[
+    TextData["GroupMath Tutorial"]],"paclet:GroupMath/tutorial/GroupMathDoc"},
+  "RefLink",
+  BaseStyle->"Tutorials"]], "Tutorials",
+ CellID->341631938,ExpressionUUID->"efdb74b4-1721-478c-887f-5e8fa96f3b9f"]
+}, Open  ]],
+
+Cell[" ", "FooterCell",ExpressionUUID->"844889c1-ec1f-48e1-bea9-66175193681a"]
+},
+Saveable->False,
+ScreenStyleEnvironment->"Working",
+WindowSize->{725, 750},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+WindowTitle->"CartanMatrix",
+TaggingRules->{
+ "ModificationHighlight" -> False, "ColorType" -> "SymbolColor", "LinkTrails" -> 
+  GridBox[{{
+      RowBox[{
+        ButtonBox[
+        "Mathematica", ButtonData -> "paclet:GroupMath/guide/GroupMath", 
+         BaseStyle -> {"Link", "DockedLinkTrail"}]}]}}, ColumnAlignments -> 
+    Left], "HasOptions" -> False, "ExampleCounter" -> 1, "NeedPlatMsgIn" -> 
+  None, "RootCaptions" -> "", 
+  "Metadata" -> {
+   "built" -> "{2020, 3, 20, 20, 19, 4.0961856}", 
+    "history" -> {"1.0", "", "", ""}, "context" -> "GroupMath`", 
+    "keywords" -> {}, "specialkeywords" -> {}, 
+    "tutorialcollectionlinks" -> {}, "index" -> True, "label" -> 
+    "Group Math Symbol", "language" -> "en", "paclet" -> "GroupMath", 
+    "status" -> "None", "summary" -> 
+    "CartanMatrix[\"group family name\", family index] Returns the Cartan \
+matrix of a simple group, given its name", "synonyms" -> {}, 
+    "tabletags" -> {}, "title" -> "CartanMatrix", "titlemodifier" -> "", 
+    "windowtitle" -> "CartanMatrix", "type" -> "Symbol", "uri" -> 
+    "GroupMath/ref/CartanMatrix", "WorkflowDockedCell" -> ""}, 
+  "SearchTextTranslated" -> "", "NewStyles" -> False},
+CellContext->"Global`",
+FrontEndVersion->"12.0 for Microsoft Windows (64-bit) (April 8, 2019)",
+StyleDefinitions->Notebook[{
+   Cell[
+    StyleData[
+    StyleDefinitions -> FrontEnd`FileName[{"Wolfram"}, "Reference.nb"]]], 
+   Cell[
+    StyleData["Input"], CellContext -> "Global`"], 
+   Cell[
+    StyleData["Output"], CellContext -> "Global`"]}, Visible -> False, 
+  TaggingRules -> {"NewStyles" -> False}, FrontEndVersion -> 
+  "12.0 for Microsoft Windows (64-bit) (April 8, 2019)", StyleDefinitions -> 
+  "Default.nb"]
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "PrimaryExamplesSection"->{
+  Cell[11371, 323, 433, 11, 35, "PrimaryExamplesSection",ExpressionUUID->"1ee3df3f-d1fe-4b09-8f9c-156d8099051c",
+   CellTags->"PrimaryExamplesSection",
+   CellID->3209156]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"PrimaryExamplesSection", 32219, 959}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[584, 21, 3451, 77, 53, "AnchorBarGrid",ExpressionUUID->"bbe0c2fc-75e6-465c-914e-db630fbc8a43",
+ CellID->1],
+Cell[CellGroupData[{
+Cell[4060, 102, 397, 9, 52, "ObjectNameGrid",ExpressionUUID->"e63791a0-eb2a-48cd-b0eb-f5ddb53a1449"],
+Cell[4460, 113, 609, 13, 110, "Usage",ExpressionUUID->"1e02244b-7cbf-4e0a-97b6-1a1d1760a606",
+ CellID->982511436]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5106, 131, 855, 21, 37, "NotesSection",ExpressionUUID->"413fedad-90da-459b-9300-e46d1f0aa49e",
+ CellGroupingRules->{"SectionGrouping", 50},
+ CellID->459846323],
+Cell[5964, 154, 86, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"91e1582d-29e6-43d6-b8f1-7dca13179af4"],
+Cell[6053, 156, 955, 30, 70, "Notes",ExpressionUUID->"ee9a85b8-13ce-45c9-9cda-f2838f3edd93",
+ CellID->1067943069],
+Cell[7011, 188, 441, 8, 70, "Notes",ExpressionUUID->"818bcea7-e59c-4b2f-a164-4f6ec54f34ab",
+ CellID->134456772],
+Cell[7455, 198, 777, 18, 70, "Notes",ExpressionUUID->"80d5d15c-88ca-4911-8a7b-368df63acea6",
+ CellID->397766052],
+Cell[8235, 218, 2036, 71, 70, "Notes",ExpressionUUID->"fc61e0a8-fda6-4ea7-abb3-078e16b8fdc8",
+ CellID->291147927],
+Cell[10274, 291, 658, 18, 70, "Notes",ExpressionUUID->"2553a0d2-11eb-462c-8a8f-8fd6787efc40",
+ CellID->421381903],
+Cell[10935, 311, 310, 5, 70, "Notes",ExpressionUUID->"499dd80a-5c19-4847-a53e-89afdf9eabf4",
+ CellID->442451699],
+Cell[11248, 318, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"f8feb781-71d7-47a0-b2fd-b46ee1ad6622"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[11371, 323, 433, 11, 35, "PrimaryExamplesSection",ExpressionUUID->"1ee3df3f-d1fe-4b09-8f9c-156d8099051c",
+ CellTags->"PrimaryExamplesSection",
+ CellID->3209156],
+Cell[CellGroupData[{
+Cell[11829, 338, 307, 7, 29, "ExampleSection",ExpressionUUID->"2dd37eee-3075-44ba-bbf0-cf9743d77486",
+ CellID->94114136],
+Cell[12139, 347, 153, 1, 38, "ExampleText",ExpressionUUID->"775ad724-81cc-4d0c-b907-10e1323a37de",
+ CellID->291330644],
+Cell[CellGroupData[{
+Cell[12317, 352, 237, 6, 26, "Input",ExpressionUUID->"5ca1b0d0-52b6-4f48-85b5-92afcb3a2b1c",
+ CellID->616364856],
+Cell[12557, 360, 636, 19, 48, "Output",ExpressionUUID->"df6c6351-d2d6-49ab-b8c5-f53af7b110d5",
+ CellID->645347224]
+}, Open  ]],
+Cell[13208, 382, 146, 1, 38, "ExampleText",ExpressionUUID->"176f2d38-1b8a-46de-804e-9f1c8d7f0324",
+ CellID->192904258],
+Cell[CellGroupData[{
+Cell[13379, 387, 285, 5, 59, "Input",ExpressionUUID->"d95ebf16-c983-4b1b-94e3-36b32fd82031",
+ CellID->703238829],
+Cell[13667, 394, 636, 19, 48, "Output",ExpressionUUID->"d58ad805-7682-4b5e-809a-91ef060bb328",
+ CellID->211364966],
+Cell[14306, 415, 635, 19, 48, "Output",ExpressionUUID->"5d6b74a8-c46d-421a-93c9-56aa73c77d30",
+ CellID->75385587],
+Cell[14944, 436, 636, 19, 48, "Output",ExpressionUUID->"952cd089-f0a0-4644-b212-341622c828e4",
+ CellID->902261128]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[15617, 460, 242, 5, 8, "ExampleDelimiter",ExpressionUUID->"81bb5563-35b6-4bc9-922a-b81438e010ed",
+ CellID->307500095],
+Cell[15862, 467, 112, 1, 38, "ExampleText",ExpressionUUID->"f040f9b5-65e2-4bc1-a420-56cff16912c1",
+ CellID->81414641],
+Cell[CellGroupData[{
+Cell[15999, 472, 295, 6, 43, "Input",ExpressionUUID->"06426338-73f5-4efe-8343-e2a4143a8d24",
+ CellID->595334560],
+Cell[16297, 480, 1173, 32, 68, "Output",ExpressionUUID->"273b85e9-b4b7-4bb9-ba71-9145c5bc852b",
+ CellID->82615891],
+Cell[17473, 514, 764, 22, 52, "Output",ExpressionUUID->"c6f7434c-6260-46da-86b0-3ae864da6c97",
+ CellID->151624854]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[18298, 543, 317, 7, 70, "ExampleSection",ExpressionUUID->"f29282b2-f513-4e2b-9027-c0c6ed1df69b",
+ CellID->2123667759],
+Cell[18618, 552, 318, 5, 70, "ExampleText",ExpressionUUID->"440859bc-1e90-4d1b-b06c-0727e52998db",
+ CellID->309776557],
+Cell[CellGroupData[{
+Cell[18961, 561, 971, 24, 70, "Input",ExpressionUUID->"5037f55d-6fad-4f15-9d97-a6d42c9dbe32",
+ CellID->35929978],
+Cell[CellGroupData[{
+Cell[19957, 589, 167, 2, 70, "Print",ExpressionUUID->"e0426082-69df-4e63-b95a-cb3ab8657630",
+ CellID->43469708],
+Cell[20127, 593, 1803, 53, 70, "Print",ExpressionUUID->"502eb395-cdfa-4c3e-aefe-078fad937ffa",
+ CellID->264495936],
+Cell[21933, 648, 163, 2, 70, "Print",ExpressionUUID->"58ff4ef7-c2a7-4a19-966e-cd27776d60b2",
+ CellID->496912657],
+Cell[22099, 652, 1623, 49, 70, "Print",ExpressionUUID->"cf4d4fa8-ba9b-42e3-a78b-7dcefa75c5cb",
+ CellID->552253896],
+Cell[23725, 703, 161, 2, 70, "Print",ExpressionUUID->"9eb58eb3-42fe-4d25-8d35-2e701541fc0e",
+ CellID->4096164],
+Cell[23889, 707, 1420, 43, 70, "Print",ExpressionUUID->"aa58056c-c36a-465d-911a-e174fda51c25",
+ CellID->95660973]
+}, Open  ]]
+}, Open  ]]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[25370, 757, 310, 7, 70, "ExampleSection",ExpressionUUID->"7e9b0108-5202-4a03-8fbd-80ee3024a70c",
+ CellID->1305812373],
+Cell[25683, 766, 136, 1, 70, "ExampleText",ExpressionUUID->"7320854c-a214-48ae-a226-5fd0112ece08",
+ CellID->153586851],
+Cell[CellGroupData[{
+Cell[25844, 771, 298, 6, 70, "Input",ExpressionUUID->"d1cd2c56-31ab-4668-806d-ea4329a3c235",
+ CellID->152761480],
+Cell[26145, 779, 255, 3, 52, "Output",ExpressionUUID->"49e22965-d3c5-43da-81f0-329c5ec592bc",
+ CellID->172876918],
+Cell[26403, 784, 255, 3, 52, "Output",ExpressionUUID->"df8ac435-2c48-439c-9b79-f7ce31da5d16",
+ CellID->248329782]
+}, Open  ]],
+Cell[26673, 790, 207, 4, 70, "ExampleText",ExpressionUUID->"05465472-d5a5-45db-a827-4de036c9d382",
+ CellID->139325103],
+Cell[CellGroupData[{
+Cell[26905, 798, 195, 4, 70, "Input",ExpressionUUID->"14c62509-0c78-4c5d-b66c-fe0e3c95c601",
+ CellID->565558492],
+Cell[27103, 804, 269, 8, 35, "Output",ExpressionUUID->"2d8a035c-58e1-42d1-a6ec-6c2145173519",
+ CellID->454541147]
+}, Open  ]],
+Cell[27387, 815, 307, 5, 70, "ExampleText",ExpressionUUID->"c612cedb-bf46-4adb-8320-f4907d5feeaf",
+ CellID->331091331],
+Cell[CellGroupData[{
+Cell[27719, 824, 193, 4, 70, "Input",ExpressionUUID->"f03b48df-feb7-434d-8156-fe7d9c6c5358",
+ CellID->8462184],
+Cell[27915, 830, 269, 8, 35, "Output",ExpressionUUID->"ba820281-cfd3-4874-83c9-08563b367105",
+ CellID->306928622]
+}, Open  ]],
+Cell[28199, 841, 100, 1, 70, "ExampleText",ExpressionUUID->"f84661e0-4a35-4a3d-87ed-d359a243037e",
+ CellID->84551968],
+Cell[CellGroupData[{
+Cell[28324, 846, 221, 5, 70, "Input",ExpressionUUID->"46f895be-291f-4eef-823f-52044cf67b58",
+ CellID->366128562],
+Cell[28548, 853, 269, 8, 35, "Output",ExpressionUUID->"7e387d8e-f3cc-4aaa-8da2-c335d82cc67b",
+ CellID->733743670]
+}, Open  ]],
+Cell[28832, 864, 112, 1, 70, "ExampleText",ExpressionUUID->"8c5993a8-bee0-4020-a1f5-698e8ca90a41",
+ CellID->215996363],
+Cell[CellGroupData[{
+Cell[28969, 869, 173, 4, 70, "Input",ExpressionUUID->"fbcc82ad-2b5b-4e44-b9bd-603505e8d389",
+ CellID->40575268],
+Cell[29145, 875, 268, 8, 35, "Output",ExpressionUUID->"6dd9bdc8-2a57-4bf0-9483-c081eee83e37",
+ CellID->22142513]
+}, Open  ]]
+}, Closed]],
+Cell[29440, 887, 86, 0, 70, "SectionFooterSpacer",ExpressionUUID->"c4936a11-077a-4ec9-9a9f-e5d106158055"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[29563, 892, 262, 7, 70, "TutorialsSection",ExpressionUUID->"9ac87469-96cc-4b57-80fc-fe38fac6e2ea",
+ CellID->250839057],
+Cell[29828, 901, 86, 0, 70, "SectionHeaderSpacer",ExpressionUUID->"e083a03d-e333-47bb-9f13-5971d1ff81a9"],
+Cell[29917, 903, 241, 5, 70, "Tutorials",ExpressionUUID->"efdb74b4-1721-478c-887f-5e8fa96f3b9f",
+ CellID->341631938]
+}, Open  ]],
+Cell[30173, 911, 78, 0, 70, "FooterCell",ExpressionUUID->"844889c1-ec1f-48e1-bea9-66175193681a"]
+}
+]
+*)
+
+(* End of internal cache information *)
+
