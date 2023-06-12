@@ -1,10 +1,10 @@
 (* Paclet Info File *)
 
-(* created 2020/03/06*)
+(* created 2020/10/22*)
 
 Paclet[
     Name -> "GroupMath",
-    Version -> "1.0",
+    Version -> "1.1",
     MathematicaVersion -> "11+",
     Creator -> "Renato Fonseca",
     Extensions -> 

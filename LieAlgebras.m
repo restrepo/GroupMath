@@ -100,14 +100,14 @@ G2=g2=CartanMatrix["G",2];
 F4=f4=CartanMatrix["F",4];
 U1=u1=CartanMatrix["U",1]=CartanMatrix["u",1]={};
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 (* Returns True if group is ***not*** a list of groups {g1,g2,...} *)
 (* Examples: IsSimpleGroupQ[U1]=IsSimpleGroupQ[SO10]=True; IsSimpleGroupQ[{SO10}]=IsSimpleGroupQ[{U1,U1}]=IsSimpleGroupQ[{SU3,SU2,U1}]=False. *)
 IsSimpleGroupQ[group_]:=IsSimpleGroupQ[group]=If[Depth[group]==2||(Depth[group]==3&&group=!=ConstantArray[U1,Length[group]]),Return[True],Return[False]];
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 CMtoName[group_]:=If[IsSimpleGroupQ[group],CMtoName\[UnderBracket]Aux[group],CMtoName\[UnderBracket]Aux/@group]
 CMtoName\[UnderBracket]Aux[cm_]:=Module[{aux,result},
 
@@ -129,8 +129,8 @@ If[aux[[1]]=="D",result="SO"<>ToString[2aux[[2]]]];
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 (* DESCRIPTION: Returns the list of positive roots of a group *)
 PositiveRoots[cm_]:=PositiveRoots[cm]=Module[{n,weights,aux1,aux2,aux3,cont},
 n=Length[cm]; (* =number of simple roots *)
@@ -155,8 +155,8 @@ aux1=Append[aux1,aux3];
 
 Return[weights];]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 SpecialMatrixD[cm_]:=SpecialMatrixD[cm]=Module[{n,result,k},
 n=Length[cm];
 result=Table[0,{i,n},{j,4}];
@@ -178,42 +178,64 @@ result[[i,k]]=j;result[[i,k+1]]=j;result[[i,k+2]]=j;k=k+3;
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-ReflectWeight[cm_,weight_,i_]:=Module[{mD,result},
-result= weight;
-result[[i]]=-weight[[i]];
-mD=SpecialMatrixD[cm];
+(* ::Input::Initialization:: *)
+WeightReflectionMatrix[group_]:=WeightReflectionMatrix[group]=Module[{mD,result,vars,v,reflectedWeights},
+
+vars=Array[v,Length[group]];
+
+reflectedWeights=Reap[Do[
+result= vars;
+result[[i]]=-vars[[i]];
+mD=SpecialMatrixD[group];
 Do[
-If[mD[[i,j]]!=0,result[[mD[[i,j]]]]+=weight[[i]]];
+If[mD[[i,j]]!=0,result[[mD[[i,j]]]]+=vars[[i]]];
 ,{j,4}];
-
-Return[result];
+Sow[result];
+,{i,Length[group]}]][[2,1]];
+result=CoefficientArrays[reflectedWeights,vars][[2]];
+Return[Normal[result]];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+WeightReflectionMatrix[group_,i_]:=WeightReflectionMatrix[group,i]=WeightReflectionMatrix[group][[i]]
+
+ReflectWeight[cm_,weight_,i_]:=WeightReflectionMatrix[cm,i].weight
+
+
+(* ::Input::Initialization:: *)
+(* Auxiliar function to DominantConjugate *)
+DominantConjugateCompiledAux=Compile[{{nextI, _Integer,1},{lengthCM, _Integer},{weight, _Integer,1},{reflectionMatrices, _Integer,3}},
+Module[{i=1 ,dWeight,index=0},
+dWeight=weight;
+While[i<=lengthCM,
+If[dWeight[[i]]<0,
+index++;
+dWeight= reflectionMatrices[[i]].dWeight;
+i=nextI[[i]]; (* Original reference suggests just i=mD[[i,1]]; But this would lead to a bug. *)
+,i++];
+];
+Append[dWeight,index]
+]
+];
 
 (* This function fails for example if cm={{2,0},{0,2}}= SU2xSU2. This is not 100% satisfactory, but in practice is not a problem. *)
 (* Output is {dominant weight conjugated to 'weight', level} where level is the minimum number of Weyl reflections needed to transform 'weight' into its dominant conjugate *)
-DominantConjugate[cm_,weight_]:=DominantConjugate[cm,weight]=Module[{index,dWeight,i,mD},
-If[cm=={{2}},Return[If[weight[[1]]<0,{-weight,1},{weight,0}]]]; (* for SU2 the code below would not work *)
-index=0;
-dWeight=weight;
-i=1;
-mD=SpecialMatrixD[cm];
+DominantConjugate[cm_,weight_]:=Module[{index,dWeight,mD,nextI,result},
+If[cm==={{2}},Return[If[weight[[1]]<0,{-weight,1},{weight,0}]]]; (* for SU2 the code below would not work *)
 
-While[i<=Length[cm],
-If[dWeight[[i]]<0,
-index++;
-dWeight=ReflectWeight[cm,dWeight,i];
-i=Min[mD[[i,1]],i+1]; (* Original reference suggests just i=mD[[i,1]]; But this would lead to a bug. *)
-,i++];
-];
+mD=SpecialMatrixD[cm];
+nextI=Table[Min[mD[[i,1]],i+1],{i,Length[cm]}];
+
+(* Loop performed with compiled code *)
+result=DominantConjugateCompiledAux[nextI,Length[cm],weight,WeightReflectionMatrix[cm]];
+
+dWeight=result[[1;;-2]];
+index=result[[-1]];
 Return[{dWeight,index}];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 (* This commented version of the WeylOrbit function is equivalent to the one being used, and it is more human readable (but slower) *)
 (*
 WeylOrbit[cm_,weight_]:=Module[{wL,counter,n,result,aux},
@@ -270,8 +292,42 @@ result=Flatten[result,1];
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+
+(* ::Input::Initialization:: *)
+(* Auxiliar function to DominantConjugate *)
+DominantConjugateCompiledAux=Compile[{{nextI, _Integer,1},{lengthCM, _Integer},{weight, _Integer,1},{reflectionMatrices, _Integer,3}},
+Module[{i=1 ,dWeight,index=0},
+dWeight=weight;
+While[i<=lengthCM,
+If[dWeight[[i]]<0,
+index++;
+dWeight= reflectionMatrices[[i]].dWeight;
+i=nextI[[i]]; (* Original reference suggests just i=mD[[i,1]]; But this would lead to a bug. *)
+,i++];
+];
+Append[dWeight,index]
+]
+];
+
+(* This function fails for example if cm={{2,0},{0,2}}= SU2xSU2. This is not 100% satisfactory, but in practice is not a problem. *)
+(* Output is {dominant weight conjugated to 'weight', level} where level is the minimum number of Weyl reflections needed to transform 'weight' into its dominant conjugate *)
+DominantConjugate[cm_,weight_]:=Module[{index,dWeight,mD,nextI,result},
+If[cm==={{2}},Return[If[weight[[1]]<0,{-weight,1},{weight,0}]]]; (* for SU2 the code below would not work *)
+
+mD=SpecialMatrixD[cm];
+nextI=Table[Min[mD[[i,1]],i+1],{i,Length[cm]}];
+
+(* Loop performed with compiled code *)
+result=DominantConjugateCompiledAux[nextI,Length[cm],weight,WeightReflectionMatrix[cm]];
+
+dWeight=result[[1;;-2]];
+index=result[[-1]];
+Return[{dWeight,index}];
+]
+
+
+(* ::Input::Initialization:: *)
 DominantWeights[cm_,w_]:=DominantWeights[cm,w]=Module[{proots,listw,counter,aux,functionAux,result,aux1,aux2,n,k,cmInv,matD,cmID,deltaTimes2},
 cmInv=Inverse[cm];
 
@@ -322,7 +378,8 @@ result=Append[result,{listw[[j]],functionAux[listw[[j]]]}];
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+
+(* ::Input::Initialization:: *)
 (* Reference:  the Lie Manual available in http://www-math.univ-poitiers.fr/~maavl/LiE/ *)
 LongestWeylWord[cm_]:=LongestWeylWord[cm]=Module[{n,weight,aux,result},
 n=Length[cm];
@@ -336,6 +393,8 @@ PrependTo[result,aux];
 Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
 Adjoint[input__]:=If[IsSimpleGroupQ[{input}[[1]]],AdjointBaseMethod[input],AdjointBaseMethod@@@Transpose[{input}]];
@@ -359,7 +418,7 @@ Return[result];
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-SimpleProduct[v1_,v2_,cmID_]:=1/2 ({v1}.cmID.Transpose[{v2}])[[1,1]];
+SimpleProduct[v1_,v2_,cmID_]:=1/2 v1.cmID.v2
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
@@ -433,7 +492,7 @@ output=ReduceRepProductBase[group,repsList];
 ,
 output={#[[1;;-1,1]],Times@@#[[1;;-1,2]]}&/@Tuples[MapThread[ReduceRepProductBase[#1,#2]&,{group,Transpose[repsList]}]];
 ];
-If[OptionValue[UseName],output={RepName[group,Simplify[#[[1]]]],#[[2]]}&/@output];
+If[OptionValue[UseName],output=MapThread[List,{RepNameBatchMode[group,Simplify[output[[All,1]]]],output[[All,2]]}]];
 Return[output];
 ];
 
@@ -444,6 +503,8 @@ repsList=SimpleRepInputConversion[cm,#]&/@repsListIn;
 If[cm==U1,Return[{{Plus@@repsList,1}}]];
 
 (* If there is only one rep in listReps - trivial *)
+repsList=DeleteCases[repsList,x_/;x===0x];
+If[Length[repsList]==0,Return[{{ConstantArray[0,Length[cm]],1}}]];
 If[Length[repsList]==1,Return[{{repsList[[1]],1}}]];
 
 orderedList=Sort[repsList,DimR[cm,#1]<DimR[cm,#2]&];
@@ -459,32 +520,33 @@ ReduceRepProductBase1[cm_,rep1_,listReps_]:=Module[{result},
 result=Table[({#[[1]],listReps[[i,2]]#[[2]]})&/@ReduceRepProductBase2[cm,rep1,listReps[[i,1]]],{i,Length[listReps]}];
 result=Join@@result;
 result=GatherBy[result,#[[1]]&];
-result=Table[{result[[i,1,1]],Sum[result[[i,j,2]],{j,Length[result[[i]]]}]},{i,Length[result]}];
+result={#[[1,1]],Total[#[[All,2]]]}&/@result;
 Return[result];
 ]
 
-ReduceRepProductBase2[cm_,w1_,w2_]:=Module[{l1,wOrbit,delta,n,aux,dim,allIrrep,result},
+ReduceRepProductBase2[cm_,w1_,w2_]:=Module[{l1,wOrbit,delta,n,aux,allIrrep,result},
 n=Length[cm];
-delta=Table[1,{i,n}];
+delta=ConstantArray[1,n];
 
 l1=DominantWeights[cm,w1];
-dim[x_]=0;
-allIrrep={};
-Do[
+
+allIrrep=Reap[Do[
 wOrbit=WeylOrbit[cm,l1[[i,1]]];
+
 Do[
 aux=DominantConjugate[cm,wOrbit[[j]]+w2+delta];
 
-If[aux[[1]]-1==Abs[aux[[1]]-1], (*regular*)
-dim[aux[[1]]-delta]+=(-1)^aux[[2]] l1[[i,2]];
-allIrrep=DeleteDuplicates[Append[allIrrep,aux[[1]]-delta]];
+If[aux[[1]]-1==Abs[aux[[1]]-1], (* regular *)
+Sow[{aux[[1]]-delta,(-1)^aux[[2]] l1[[i,2]]}];
+
 ];
 ,{j,Length[wOrbit]}];
 
-,{i,Length[l1]}];
+,{i,Length[l1]}]][[2,1]];
 
-result=Table[{allIrrep[[i]],dim[allIrrep[[i]]]},{i,Length[allIrrep]}];
+result={#[[1,1]],Total[#[[All,2]]]}&/@GatherBy[allIrrep,#[[1]]&];
 result=DeleteCases[result,x_/;x[[2]]==0];
+
 Return[result];
 ];
 
@@ -510,6 +572,51 @@ result=Product[SimpleProduct[proots[[i]],w+delta,cmID]/SimpleProduct[proots[[i]]
 Return[result];
 ]
 
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+(* Calculates the Casimir invariant of an irrep *)
+Casimir[group_,rep_]:=Casimir[group,rep]=If[IsSimpleGroupQ[group],CasimirBaseMethod[group,rep],CasimirBaseMethod@@@MapThread[List,{group,rep}]];
+
+(* Uses formula XI.23 of "Semi-Simple Lie Algebras and Their Representations", page 89 *)
+
+CasimirBaseMethod[cm_,wIn_]:=Module[{w,n,cmInv,matD,cmID,proots,deltaTimes2,result},
+w=SimpleRepInputConversion[cm,wIn];
+If[cm==={}||cm===ConstantArray[{},Length[cm]],Return[w^2]]; (* U1 group or multiple U1 groups *)
+
+n=Length[cm];
+proots=PositiveRoots[cm];
+
+cmInv=Inverse[cm];
+matD=MatrixD[cm];
+cmID=cmInv.matD/Max[matD]; (* Note: Max[matD] is to cut a factor of 2 in the SP class of groups. As it is, it is assumed that Max[<\[Alpha],\[Alpha]>]=1 (considering all positive roots). This happens naturally for all groups, except the SP class *)
+deltaTimes2=Sum[proots[[i]],{i,Length[proots]}];
+result=SimpleProduct[w,w+deltaTimes2,cmID];
+
+Return[result];
+]
+
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+
+DynkinIndex[cm_,rep_]:=DynkinIndex[cm,rep]=Simplify[Casimir[cm,rep] DimR[cm,rep]/DimR[cm,Adjoint[cm]]]
+
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+
+(* Uses formula XI.31 of "Semi-Simple Lie Algebras and Their Representations", page 91 *)
+RepresentationIndex[group_,rep_]:= RepresentationIndex[group,rep]=If[IsSimpleGroupQ[group],RepresentationIndex\[UnderBracket]BaseMethod[group,rep],RepresentationIndex\[UnderBracket]BaseMethod@@@MapThread[List,{group,rep}]]
+
+RepresentationIndex\[UnderBracket]BaseMethod[cm_,repIn_]:=Module[{rep,\[Delta],cmInv,matD,cmID,result},
+rep=SimpleRepInputConversion[cm,repIn];
+\[Delta]=ConstantArray[1,Length[cm]];
+cmInv=Inverse[cm];
+matD=MatrixD[cm];
+cmID=cmInv.matD/Max[matD];
+
+(* Factor of 2 ensures is due to the fact that SimpleProduct is defined such that Max[<\[Alpha],\[Alpha]>]=1 (considering all positive roots), but we would want it to be =2 *)
+result=DimR[cm,rep]/DimR[cm,Adjoint[cm]]2SimpleProduct[rep,rep+2\[Delta],cmID];
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
 (*  Wrapper function of RepMinimalMatrices\[UnderBracket]BaseMethod: if the given group is not simple*)
 RepMinimalMatrices[group_,repIn_]:=Module[{rep,repMats,identities,aux,aux2,dimsG,dimsGAcc,res},
 rep=SimpleRepInputConversion[group,repIn];
@@ -684,52 +791,8 @@ aux1=Table[{matrixE[i],matrixF[i],matrixH[i]},{i,n}];
 Return[aux1]; (*  result is a list with entries {e[i],f[i],h[i]} *)
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* Calculates the Casimir invariant of an irrep *)
-Casimir[group_,rep_]:=Casimir[group,rep]=If[IsSimpleGroupQ[group],CasimirBaseMethod[group,rep],CasimirBaseMethod@@@MapThread[List,{group,rep}]];
 
-(* Uses formula XI.23 of "Semi-Simple Lie Algebras and Their Representations", page 89 *)
-
-CasimirBaseMethod[cm_,wIn_]:=Module[{w,n,cmInv,matD,cmID,proots,deltaTimes2,result},
-w=SimpleRepInputConversion[cm,wIn];
-If[cm==={}||cm===ConstantArray[{},Length[cm]],Return[w^2]]; (* U1 group or multiple U1 groups *)
-
-n=Length[cm];
-proots=PositiveRoots[cm];
-
-cmInv=Inverse[cm];
-matD=MatrixD[cm];
-cmID=cmInv.matD/Max[matD]; (* Note: Max[matD] is to cut a factor of 2 in the SP class of groups. As it is, it is assumed that Max[<\[Alpha],\[Alpha]>]=1 (considering all positive roots). This happens naturally for all groups, except the SP class *)
-deltaTimes2=Sum[proots[[i]],{i,Length[proots]}];
-result=SimpleProduct[w,w+deltaTimes2,cmID];
-
-Return[result];
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-DynkinIndex[cm_,rep_]:=DynkinIndex[cm,rep]=Simplify[Casimir[cm,rep] DimR[cm,rep]/DimR[cm,Adjoint[cm]]]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-(* Uses formula XI.31 of "Semi-Simple Lie Algebras and Their Representations", page 91 *)
-RepresentationIndex[group_,rep_]:= RepresentationIndex[group,rep]=If[IsSimpleGroupQ[group],RepresentationIndex\[UnderBracket]BaseMethod[group,rep],RepresentationIndex\[UnderBracket]BaseMethod@@@MapThread[List,{group,rep}]]
-
-RepresentationIndex\[UnderBracket]BaseMethod[cm_,repIn_]:=Module[{rep,\[Delta],cmInv,matD,cmID,result},
-rep=SimpleRepInputConversion[cm,repIn];
-\[Delta]=ConstantArray[1,Length[cm]];
-cmInv=Inverse[cm];
-matD=MatrixD[cm];
-cmID=cmInv.matD/Max[matD];
-
-(* Factor of 2 ensures is due to the fact that SimpleProduct is defined such that Max[<\[Alpha],\[Alpha]>]=1 (considering all positive roots), but we would want it to be =2 *)
-result=DimR[cm,rep]/DimR[cm,Adjoint[cm]]2SimpleProduct[rep,rep+2\[Delta],cmID];
-Return[result];
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-
+(* ::Input::Initialization:: *)
 (* Auxiliar method (used for building invariants) *)
 BlockW[w1_,w2_,listW_,repMat_]:=Module[{dim,b,e,aux1},
 
@@ -746,7 +809,8 @@ Return[aux1];
 
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+
+(* ::Input::Initialization:: *)
 (* This method returns the complete set of matrices that make up a representation, with the correct casimir and trace normalizations *)
 RepMatrices[group_,rep_]:=Module[{repMats,identities,aux,aux2,dimsG,dimsGAcc,res},
 If[IsSimpleGroupQ[group],
@@ -827,8 +891,8 @@ Label[end];
 Return[listTotal];
 ];
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 (* Computes the list of adjoint matrices given justa a group cm (representation used is {1,0,...}) . It uses the antisymmetry of the structure constants *)
 (* Computes the list of adjoint matrices given justa a group cm (representation used is {1,0,...}) . It uses the antisymmetry of the structure constants *)
 GaugeRep[cm_]:=Module[{mats,rep,res,n, factor},
@@ -857,7 +921,8 @@ res=SimplifySA/@  res;
 Return[res];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+
+(* ::Input::Initialization:: *)
 (* The invariants are symmetrized with SnIrrepGenerators. To be precise, invariants/.{a\[Rule]b,b\[Rule]a}=SnM1.invariants and invariants/.{a\[Rule]b,b\[Rule]c,c\[Rule]d,d\[Rule]e,...,X\[Rule]a}=SnM2.invariants where X is some letter (depends on the number of repeated representations n) and {SnM1,SnM2} are the matrices given by SnIrrepGenerators. This is assuming just a single representation repeated n times. For more complicated cases the generalization is trivial. In terms of the invariants in tensor form, Transpose[invariants,{1,3,2,4,5,6,...}]=SnM1.invariants and Transpose[invariants,{1,3,4,5,6,...,2}]=SnM2.invariants  *)
 Options[SymmetrizeInvariants]={DistinguishFields->False,OrthogonalizeGenerators->True};
 
@@ -977,6 +1042,7 @@ Return[result];
 ]
 
 
+(* ::Input::Initialization:: *)
 NormalizeInvariants[liegroup_,representations_,invariantsTensors_]:=Module[{aux,result,startAndEnds},
 If[Length[invariantsTensors]==0,Return[{}]];
 aux=Simplify[Table[Total[invI invJ,{1,-1}],{invI,invariantsTensors},{invJ,invariantsTensors}]];
@@ -986,6 +1052,8 @@ result=(Times@@(Times@@DimR[liegroup,#]&/@representations))^(1/4)result;
 Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* Unfortunately, this sign fixing cannot be done at the same time as NormalizeInvariants. So, the sequence is:
 1. NormalizeInvariants; 2. SymmetrizeInvariants; 3. FixSignOfInvariants.
 *)
@@ -1009,8 +1077,7 @@ Return[invariantsTensors];
 ]
 
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
+(* ::Input::Initialization:: *)
 (* Invariants3Mod and IrrepInProduct are auxiliar methods *)
 Invariants3Mod[cm_,reps_,conjs_]:=Module[{},
 If[(conjs[[1]]&&conjs[[2]]&&conjs[[3]])||((!conjs[[1]])&&(!conjs[[2]])&&(!conjs[[3]])),Return[InvariantsOld[cm,reps[[1]],reps[[2]],reps[[3]]]]];
@@ -1021,6 +1088,7 @@ If[((!conjs[[1]])&&conjs[[2]]&&conjs[[3]])||((conjs[[1]])&&(!conjs[[2]])&&(!conj
 ]
 
 
+(* ::Input::Initialization:: *)
 Options[IrrepInProduct]={ConjugateTargetRep->False,ConjugateRepsInProduct->False,TensorForm->False,DistinguishFields->False,NormalizeAndSymmetrize->False};
 IrrepInProduct[group_,factorRepsIn_,targetRepInProductIn_,OptionsPattern[]]:=Module[{conjProduct,conjRep,symInfo,aux,result,gaugeReps,result2,variableHead,variables,distinguishFields,conjugations,reps,pos,start,end,factorReps,targetRepInProduct},
 
@@ -1064,6 +1132,9 @@ aux=CoefficientArrays[#,vector][[2]]&/@aux;
 
 Return[aux];
 ]
+
+
+(* ::Input::Initialization:: *)
 (* "SnNonOrthogonal" is possible for the option NormalizeAndSymmetrize *)
 $GroupMath\[UnderBracket]Invariants\[UnderBracket]Symmetries = Null;
 Options[Invariants]={Conjugations->{},(* BasisRotation\[Rule]Null,*)TensorForm->False,DistinguishFields->False,NormalizeAndSymmetrize->True,FactorGroupExtraConjugation->{}};
@@ -1226,6 +1297,7 @@ If[!OptionValue[TensorForm],Return[result],Return[{tensors,variables}]];
 ]
 
 
+(* ::Input::Initialization:: *)
 (* This is the old wrapper method that calculates invariants of combinations of up to 3 fields. The new method (Invariants) may contain an arbitrary number of fields and has a different input syntax *)
 InvariantsOld[arguments__]:=InvariantsOld[arguments]=Module[{result,argumentsList,nArgs,conjugate,aux,aux2,numberGroups},
 
@@ -1266,8 +1338,8 @@ result=aux2;
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 InvariantsBaseMethod[cm_,rep1_,conj_Symbol:False]:=Module[{result},
 
 result=If[rep1==Table[0,{i,Length[cm]}],{a[1]},{}];
@@ -1575,10 +1647,8 @@ Return[result];
 ]
 
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX ANOMALIES XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 (* Check if a model is anomally free or not *)
 TriangularAnomalyCheck[groups_,reps_,nF_:Null]:=Module[{nFlavours,anomalies,result},
 (* If no number of flavours were given assume that they are all =1 *)
@@ -1589,8 +1659,8 @@ result=(anomalies===0 anomalies);
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 (* For 1 field/representation this method gives a list which, when summed for all the representations in a model (note: including flavour multiplicity), must be the {0,0,...} list *)
 
 Options[TriangularAnomalyValue]={Verbose->False};
@@ -1641,10 +1711,8 @@ Return[result];
 ]
 
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX LISTING ALL REPS UP TO SOME SIZE XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 ConjugacyClassGroupModIndices[cm_]:=Module[{series,n,result},
 If[cm===U1,Return[{-1}]]; (* This -1 is just symbolic, so that the user knows there is a U1 *)
 
@@ -1664,6 +1732,8 @@ If[series==="G",result={0}];
 Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 ConjugacyClass[cm_,repIn_]:=Module[{rep,series,n,aux,result},
 If[!IsSimpleGroupQ[cm],Return[ConjugacyClass@@@Transpose[{cm,repIn}]]];
 
@@ -1682,13 +1752,15 @@ If[series==="D"&&EvenQ[n],result={Mod[rep[[-2]]+rep[[-1]],2],Mod[2Sum[rep[[i]],{
 
 If[series==="E"&&n==6,result={Mod[rep[[1]]-rep[[2]]+rep[[4]]-rep[[5]],3]}];
 If[series==="E"&&n==7,result={Mod[rep[[4]]+rep[[6]]+rep[[7]],2]}];
-If[series==="E"&&n==8,result={0}];
-If[series==="F",result={0}];
-If[series==="G",result={0}];
+If[series==="E"&&n==8,result={0rep[[1]]}];
+If[series==="F",result={0rep[[1]]}];
+If[series==="G",result={0rep[[1]]}];
 
 Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* For both RepsUpToDimN, RepsUpToDimNNoConjugates: list is sorted according to smaller dim, smaller representation index, smallar conjugacy class numbers, larger Dynkin coefficients [in this order of importance] *)
 
 (* For a simple group, this method calculates all the representations up to a given size maxDim *)
@@ -1696,37 +1768,86 @@ Options[RepsUpToDimN]={UseName->False,SortResult->True};
 Options[RepsUpToDimNNoConjugates]={UseName->False,SortResult->True};
 
 RepsUpToDimN[group_,maxDim_]:=RepsUpToDimN[group,maxDim,UseName->False,SortResult->True]
-RepsUpToDimN[group_,maxDim_,OptionsPattern[]]:=RepsUpToDimN[group,maxDim,UseName->OptionValue[UseName],SortResult->OptionValue[SortResult]]=Module[{result},
-(* This is for speed: calculate the expression for a generic representation of the group and pass it on to RepsUpToDimNAuxilarMethod *)
-fastDimR[w_]:=Evaluate[DimR[group,Array[rdm\[UnderBracket]mrk,Length[group]]]]/.MapThread[Rule,{Evaluate[Array[rdm\[UnderBracket]mrk,Length[group]]],w}];
+RepsUpToDimN[group_,maxDim_,OptionsPattern[]]:=RepsUpToDimN[group,maxDim,UseName->OptionValue[UseName],SortResult->OptionValue[SortResult]]=Module[{n,result,newReps,dimsNew,aux,genericWeight,genericWeightPattern,newPossibilities,p1,p2,p3},
 
-result=Reap[RepsUpToDimNAuxilarMethod[group,ConstantArray[0,Length[group]],1,maxDim,fastDimR]][[2,1]];
+n=Length[group];
+newReps={{ConstantArray[0,n],1}};
 
-If[OptionValue[SortResult],result=Sort[result,OrderedQ[{Join[{DimR[group,#1],RepresentationIndex[group,#1]},ConjugacyClass[group,#1],-#1],Join[{DimR[group,#2],RepresentationIndex[group,#2]},ConjugacyClass[group,#2],-#2]}]&]];
+genericWeight=Table[ToExpression["w"<>ToString[i]],{i,n}];
+genericWeightPattern=Table[ToExpression["w"<>ToString[i]<>"_"],{i,n}];
+fastDimR[genericWeightPattern]=DimR[group,genericWeight];
 
-If[OptionValue[UseName],result=RepName[group,#]&/@result];
+aux=Reap[
+While[Length[newReps]>0,
+newPossibilities= Flatten[Table[{#[[1]]+UnitVector[n,i],i},{i,#[[2]],n}]&/@newReps,1];
+dimsNew=fastDimR@Transpose[newPossibilities[[All,1]]];
+newReps=PickInRange[newPossibilities,dimsNew ,-1,maxDim];
+Sow[newReps];
+];
+][[2,1]];
+
+result=Flatten[aux,1][[All,1]];
+PrependTo[result,ConstantArray[0,n]];
+
+If[OptionValue[SortResult],
+fastRepresentationIndex[genericWeightPattern]=RepresentationIndex[group,genericWeight];
+
+p1=fastDimR[Transpose[result]];
+p2=fastRepresentationIndex[Transpose[result]];
+p3=Transpose[ConjugacyClass[group,Transpose[result]]];
+
+aux=Flatten/@MapThread[List,{p1,p2,p3,-result}];
+result=-Sort[aux][[All,-n;;-1]];
+
+];
+
+If[OptionValue[UseName],result=RepNameBatchMode[group,result]];
 
 Return[result];
 ]
+
+
 (* Same as RepsUpToDimN but returns only one representation for each pair of conjugate representations *)
 RepsUpToDimNNoConjugates[group_,maxDim_]:=RepsUpToDimNNoConjugates[group,maxDim,UseName->False,SortResult->True]
-RepsUpToDimNNoConjugates[group_,maxDim_,OptionsPattern[]]:=RepsUpToDimNNoConjugates[group,maxDim,UseName->OptionValue[UseName],SortResult->OptionValue[SortResult]]=Module[{aux,cR,cRTag,rTag,result},
-aux=RepsUpToDimN[group,maxDim];
-result=aux;
-Do[
-cR=ConjugateIrrep[group,aux[[i]]];
-cRTag=Join[{RepresentationIndex[group,cR]},ConjugacyClass[group,cR],-cR];
-rTag=Join[{RepresentationIndex[group,aux[[i]]]},ConjugacyClass[group,aux[[i]]],-aux[[i]]];
-If[!OrderedQ[{rTag,cRTag}],result[[i]]=False,result[[i]]==aux[[i]]];
-,{i,Length[aux]}];
-result=DeleteCases[result,False];
+RepsUpToDimNNoConjugates[group_,maxDim_,OptionsPattern[]]:=RepsUpToDimNNoConjugates[group,maxDim,UseName->OptionValue[UseName],SortResult->OptionValue[SortResult]]=Module[{aux,cR,cRTag,rTag,result,n,genericWeight,genericWeightPattern,p1,p2,p3,allReps,allRepsC,listN,listC},
+allReps=RepsUpToDimN[group,maxDim];
 
-If[OptionValue[SortResult],result=Sort[result,OrderedQ[{Join[{DimR[group,#1],RepresentationIndex[group,#1]},ConjugacyClass[group,#1],-#1],Join[{DimR[group,#2],RepresentationIndex[group,#2]},ConjugacyClass[group,#2],-#2]}]&]];
+n=Length[group];
+genericWeight=Table[ToExpression["w"<>ToString[i]],{i,n}];
+genericWeightPattern=Table[ToExpression["w"<>ToString[i]<>"_"],{i,n}];
+fastDimR[genericWeightPattern]=DimR[group,genericWeight];
+fastRepresentationIndex[genericWeightPattern]=RepresentationIndex[group,genericWeight];
+fastConjugateIrrep[genericWeightPattern]=ConjugateIrrep[group,genericWeight];
 
-If[OptionValue[UseName],result=RepName[group,#]&/@result];
+
+(* p2=fastRepresentationIndex[Transpose[allReps]]; *)
+p3=Transpose[ConjugacyClass[group,Transpose[allReps]]];
+listN=Flatten/@MapThread[List,{p3,-allReps}];
+
+allRepsC=Transpose[fastConjugateIrrep[Transpose[allReps]]];
+(* p2=fastRepresentationIndex[Transpose[allRepsC]]; *)
+p3=Transpose[ConjugacyClass[group,Transpose[allRepsC]]];
+listC=Flatten/@MapThread[List,{p3,-allRepsC}];
+
+aux=MapThread[Signature[List[##]]&,{listN,listC}];
+result=PickInRange[allReps,aux ,0,1];
+
+If[OptionValue[SortResult],
+
+p1=fastDimR[Transpose[result]];
+p2=fastRepresentationIndex[Transpose[result]];
+p3=Transpose[ConjugacyClass[group,Transpose[result]]];
+
+aux=Flatten/@MapThread[List,{p1,p2,p3,-result}];
+result=-Sort[aux][[All,-n;;-1]];
+
+];
+
+If[OptionValue[UseName],result=RepNameBatchMode[group,result]];
 
 Return[result];
 ]
+
 
 (* This is a recursive auxiliar method used by RepsUpToDimN and is not meant to be used directly *)
 RepsUpToDimNAuxilarMethod[group_,w_,digit_,max_,fastDimR_]:=Module[{wAux,newResult},
@@ -1748,10 +1869,8 @@ wAux[[digit]]++;
 ]
 
 
-
+(* ::Input::Initialization:: *)
 (* Code for getting the name of representations given by Dynkin coefficients *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
 Options[RepName]={ReturnAll->False};
@@ -1854,6 +1973,127 @@ Return[result];
 ]
 
 
+(* ::Input::Initialization:: *)
+
+(* RepNameBatchMode provides the same result as RepName for a list of reps simultaneously, and faster *)
+
+RepNameBatchMode[group_,reps_]:= If[IsSimpleGroupQ[group],RepNameBatchMode\[UnderBracket]BaseMethod[group,reps],If[Length[group]==1,RepNameBatchMode\[UnderBracket]BaseMethod[group[[1]],reps[[All,1]]],CircleTimes@@@Transpose[RepNameBatchMode\[UnderBracket]BaseMethod[#1,#2]&@@@MapThread[List,{group,Transpose[reps]}]]]]
+
+RepNameBatchMode\[UnderBracket]BaseMethod[simplegroup_,repListIn_]:=Module[{n,maxDim,repsToConsider,repsToConsiderFull,complement,genericWeight,genericWeightPattern,pDimR,pIndex,pClass,pConjuRep,pSignature,aux,aux1,aux2,result,printForm,rep,subscript,nPrimes,repetitionsList,repList},
+
+If[simplegroup===U1,
+result=If[Length[#]<2,ToString[StandardForm[#]],"("<>ToString[StandardForm[#]]<>")"]&/@repListIn;
+Return[result];
+];
+
+If[repListIn==={},Return[{}]];
+
+(* repListIn can have repetitions. Remove those and correct for this at the end *)
+repetitionsList={#[[1,1]],#[[All,2]]}&/@GatherBy[MapThread[List,{repListIn,Range[Length[repListIn]]}],#[[1]]&];
+repList=repetitionsList[[All,1]];
+
+n=Length[simplegroup];
+
+(* XXXXXXXXXXXX functions to speed up the calculations XXXXXXXXXXXX *)
+genericWeight=Table[ToExpression["w"<>ToString[i]],{i,n}];
+genericWeightPattern=Table[ToExpression["w"<>ToString[i]<>"_"],{i,n}];
+fastDimR[genericWeightPattern]=DimR[simplegroup,genericWeight];
+fastRepresentationIndex[genericWeightPattern]=RepresentationIndex[simplegroup,genericWeight];
+fastConjugateIrrep[genericWeightPattern]=ConjugateIrrep[simplegroup,genericWeight];
+
+
+(* XXXXXXXXXXXX Compile list of reps up to required size XXXXXXXXXXXX *)
+maxDim=Max[fastDimR[Transpose[repList]]];
+repsToConsider=RepsUpToDimN[simplegroup,10^Ceiling[Log[10,maxDim]],SortResult->False];
+
+(* XXXXXXXXXXXX Keep only the reps with the dimensions of the ones in repList AND keep track of the repList in this list (=repsToConsiderFull and repsToConsider) XXXXXXXXXXXX *)
+complement=Complement[repsToConsider,repList];
+aux=Join[MapThread[List,{repList,Range[Length[repList]],fastDimR[Transpose[repList]]}],If[complement=!={},MapThread[List,{complement,ConstantArray[0,Length[complement]],fastDimR[Transpose[complement]]}],{}]];
+aux1=GatherBy[aux,#[[3]]&];
+aux2=Total[#[[All,2]]]&/@aux1;
+repsToConsiderFull=Flatten[PickInRange[aux1,aux2,1,\[Infinity]],1][[All,1;;2]];
+repsToConsider=repsToConsiderFull[[All,1]];
+
+
+(* XXXXXXXXXXXX Organize repsToConsider(Full) by dimension AND {rep,rep*} pairing, with them sorted according to some signature XXXXXXXXXXXX *)
+pDimR=fastDimR[Transpose[repsToConsider]];
+pIndex=fastRepresentationIndex[Transpose[repsToConsider]];
+pClass=Transpose[ConjugacyClass[simplegroup,Transpose[repsToConsider]]];
+
+pConjuRep=Sort/@MapThread[List,{repsToConsider,Transpose[fastConjugateIrrep[Transpose[repsToConsider]]]}];
+pSignature=Flatten/@MapThread[List,{pDimR,pIndex,pClass,-repsToConsider}];
+
+aux=GatherBy[MapThread[List,{repsToConsider,pDimR,pConjuRep,pSignature,repsToConsiderFull[[All,2]]}],{#[[2]]&,#[[3]]&}];
+aux=Map[SortBy[#,(#[[1,4]]&)]&,Map[SortBy[#,(#[[4]]&)]&,SortBy[aux,#[[1,1,2]]&],{2}],{1}];
+
+
+If[simplegroup=!=SO8,
+
+result=Sort[Reap[Do[
+If[aux[[iDim,iTypes,iConj,5]]>0,Sow[{aux[[iDim,iTypes,iConj,5]],aux[[iDim,iTypes,iConj,2]],iTypes,iConj}]];
+,{iDim,Length[aux]},{iTypes,Length[aux[[iDim]]]},{iConj,Length[aux[[iDim,iTypes]]]}]][[2,1]]];
+result=result[[All,2;;4]];
+
+(* At this point result is a list with one item for each rep. Each item is of the form {rep dim, number of primes +1, 1=no bar and 2=bar} *)
+result=Table[
+printForm=Style[ToString[el[[1]]]<>StringJoin[ConstantArray["'",el[[2]]-1]],Bold];
+If[el[[3]]==2,printForm=OverBar[printForm]];
+printForm
+,{el,result}];
+
+,
+(* -------------------- SO(8) requires special care -------------------- *)
+(* -------------------- SO(8) requires special care -------------------- *)
+(* -------------------- SO(8) requires special care -------------------- *)
+result=Sort[Reap[Do[
+If[aux[[iDim,iTypes,iConj,5]]>0,Sow[{aux[[iDim,iTypes,iConj,5]],aux[[iDim,iTypes,iConj,2]],iTypes,iConj,Flatten[aux[[iDim,All,All,1]],1]}]];
+,{iDim,Length[aux]},{iTypes,Length[aux[[iDim]]]},{iConj,Length[aux[[iDim,iTypes]]]}]][[2,1]]];
+
+result=Table[
+rep=repList[[el[[1]]]];
+subscript="";
+aux=Tally[rep[[{1,3,4}]]];
+nPrimes=Length[DeleteDuplicates[Sort/@DeleteDuplicates/@el[[5,1;;el[[3]],{1,3,4}]]]]-1;
+
+If[Length[aux]>1,
+(*2*)
+If[rep[[3]]==rep[[4]],subscript="v"];
+If[rep[[1]]==rep[[4]],subscript="c"];
+If[rep[[1]]==rep[[3]],subscript="s"];
+
+(*3*)
+If[rep[[1]]>rep[[4]]>rep[[3]],subscript="vs"];
+If[rep[[1]]>rep[[3]]>rep[[4]],subscript="vc"];
+If[rep[[4]]>rep[[1]]>rep[[3]],subscript="sv"];
+If[rep[[4]]>rep[[3]]>rep[[1]],subscript="sc"];
+If[rep[[3]]>rep[[1]]>rep[[4]],subscript="cv"];
+If[rep[[3]]>rep[[4]]>rep[[1]],subscript="cs"];
+];
+
+printForm=ToString[el[[2]]]<>StringJoin[ConstantArray["'",nPrimes]];
+If[subscript=!="",printForm=Subscript[printForm,subscript]];
+printForm=Style[printForm,Bold];
+If[el[[4]]==2,printForm=OverBar[printForm]];
+printForm
+,{el,result}];
+
+];
+
+(* Correct the repetitions problem *)
+repetitionsList[[All,1]]=result;
+result=Sort[Flatten[Tuples[{#[[2]],{#[[1]]}}]&/@repetitionsList,1]][[All,2]];
+
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Returns True if group is ***not*** a list of groups {g1,g2,...} *)
+(* Examples: IsSimpleGroupQ[U1]=IsSimpleGroupQ[SO10]=True; IsSimpleGroupQ[{SO10}]=IsSimpleGroupQ[{U1,U1}]=IsSimpleGroupQ[{SU3,SU2,U1}]=False. *)
+IsSimpleGroupQ[group_]:=IsSimpleGroupQ[group]=If[Depth[group]==2||(Depth[group]==3&&group=!=ConstantArray[U1,Length[group]]),Return[True],Return[False]];
+
+
+(* ::Input::Initialization:: *)
 (* Code below somewhat experimental [for speeding up invariants function] 04/Feb/2014 *)
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
@@ -2220,9 +2460,18 @@ result[[All,posU1s]]=aux[[All,2]];
 (* Put the rest of things in the right postion *)
 result[[All,posNonU1s]]=aux[[All,1]];
 
-If[OptionValue[UseName],Return[RepName[subgroup,#]&/@result],Return[result]];
+If[IsSimpleGroupQ[subgroupIn],
+subgroup=subgroup[[1]];
+result=result[[All,1]];
+];
+
+If[OptionValue[UseName],result=RepNameBatchMode[subgroup,result]];
+
+Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* Less user frindly *)
 (* Will it work if the new groups are all U1s? *)
 (* oG can be a list of groups *)
@@ -2325,6 +2574,8 @@ completeResult=Join[completeResult,Simplify[result]];
 Return[completeResult];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* This is a function that speeds up the calculation of Decompose reps when a) there are no U(1)s in the group and subgroup and b) there is no rank reduction between group and subgroup. So, to simplify, for now this speed up is triggered only when both group and subgroup are simple groups with the same rank. *)
 (*
 First, a list of all subgroup representations smaller or equal in size to the originalRepresentation are computed. With the inverse projection matrix one finds the corresponding weights of group. Then, with the DominantConjugate conjugate method one can find the multiplicity of those weight in the original representation of group.
@@ -2344,6 +2595,8 @@ result={#[[1]],{},#[[2,1]]}&/@aux;
 Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* Input to this method: cms={cm1,cm2,...}; repTogether={simpleRepsMerged,<U1repsmerged if any>,degeneracy} *)
 (* This method outputs the weights of such a group/rep *)
 WeightsMod[cms_,repTogether_]:=Module[{aux,aux1,aux2,aux3,dims},
@@ -2371,6 +2624,8 @@ aux3={#[[All,1]]//Flatten,repTogether[[2]],repTogether[[-1]]Times@@#[[All,2]]}&/
 Return[aux3];
 ]
 
+
+(* ::Input::Initialization:: *)
 WeightsModDominants[cms_,repTogether_]:=Module[{aux,aux1,aux2,aux3,dims},
 dims=Length/@cms;
 aux1={};
@@ -2400,6 +2655,8 @@ aux3[[i]]={aux3[[i,All,1]]//Flatten,repTogether[[2]],repTogether[[-1]]Times@@aux
 Return[aux3];
 ]
 
+
+(* ::Input::Initialization:: *)
 DimRMod[cms_,repTogether_]:=Module[{aux,aux1,aux2,aux3,dims},
 dims=Length/@cms;
 aux1={};
@@ -2413,7 +2670,7 @@ Return[Times@@aux1];
 ]
 
 
-
+(* ::Input::Initialization:: *)
 SortWeights[cms_,weights_]:=Module[{bigCmInv,condensedWeights,aux,aux2},
 bigCmInv=Transpose[Inverse[BlockDiagonalMatrix[cms]]];
 condensedWeights=Gather[weights,#1[[{1,2}]]===#2[[{1,2}]]&];
@@ -2424,6 +2681,8 @@ aux=Sort[condensedWeights,OrderedQ[{#2[[2]],#1[[2]]}]&][[All,1]];
 Return[aux];
 ];
 
+
+(* ::Input::Initialization:: *)
 RemoveWeights[mainList_,toRemoveList_]:=Module[{aux,nU1s,nNonU1s,mainListMod,toRemoveListMod,pos},
 aux=mainList;
 mainListMod=mainList;
@@ -2486,6 +2745,8 @@ mF=Transpose[mE];
 Return[SimplifySA/@{mE,mF,mH}];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* Finds the sequence of simple roots needed to add to form the adjoint weight \[CapitalLambda]. The output is {s(1), s(2),...,s(n)} such that the series Subscript[\[Alpha], s(1)],Subscript[\[Alpha], s(1)]+Subscript[\[Alpha], s(2)],Subscript[\[Alpha], s(1)]+Subscript[\[Alpha], s(2)]+Subscript[\[Alpha], s(3)],... is some sequence of weights which ends with \[CapitalLambda]. *)
 FindAdjointDecompositionInSimpleRoots[group_]:=FindAdjointDecompositionInSimpleRoots[group]=Module[{weights,weightNow,idx,sequence,continue,i,pos},
 weights=Weights[group,Adjoint[group]][[All,1]];
@@ -2510,6 +2771,8 @@ Return[sequence];
 
 ];
 
+
+(* ::Input::Initialization:: *)
 (*
 Input example: RegularSubgroupInfo[{U1,SO10,U1},{X1,{1,0,0,0,0},X2},{SU4,SU2,U1},{{2,{-3,2,1}},{2,{4}},{C1,C2,C3}}];
 The function computes the U1's that correspond to dots that were excluded [this is essentially the maximum list of U1s that could survive symmetry breaking for the given simple subgroups], and so for each surviving U1 the linear combinations of those U1s must be given.
@@ -2665,8 +2928,7 @@ Return[{matricesSubgroup,discardedGenerators,projectionMatrix}];
 ]
 
 
-
-
+(* ::Input::Initialization:: *)
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
 (* This is inspired on BreakRep from SSB.m. The difference is that the subreps are known. Also, this function is to be used to speed up the Invariants function *)
@@ -2751,6 +3013,8 @@ If[Total[Abs[N[Total[linearCombinations]].ConjugateTranspose[N[Total[linearCombi
 Return[{irreps,linearCombinations}];
 ]
 
+
+(* ::Input::Initialization:: *)
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
 (* Uses RegularSubgroupInfo to provide the projection matrix of a regular embedding *)
@@ -2758,6 +3022,10 @@ RegularSubgroupProjectionMatrix[group_,subgroup_,dotsComposition_]:=Module[{aux,
 singlet=If[IsSimpleGroupQ[group],ConstantArray[0,Length[group]],If[#===U1,0,ConstantArray[0,Length[#]]]&/@group];
 Return[RegularSubgroupInfo[group,singlet,subgroup,dotsComposition][[3]]];
 ]
+
+
+
+(* ::Input::Initialization:: *)
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
@@ -2813,6 +3081,15 @@ countInv+=Length[invs];
 resultTensor=If[countInv==0,{},SparseArray[resultTensor,Join[{countInv},Extract[accDims+dims,Table[{i,-1},{i,Length[reps]}]]]]];
 Return[{aux,resultTensor}];
 ]
+
+
+
+(* ::Input::Initialization:: *)
+(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+(* An alias for SubgroupEmbeddingCoefficients *)
+Options[SubgroupCoefficients]={Conjugations->{},Verbose->False,StandardizeInvariants->True};
+
+SubgroupCoefficients[groupIn_,repsIn_,subgroupIn_,breakingInformation_,OptionsPattern[]]:=SubgroupEmbeddingCoefficients[groupIn,repsIn,subgroupIn,breakingInformation,Conjugations->OptionValue[Conjugations],Verbose->OptionValue[Verbose],StandardizeInvariants->OptionValue[StandardizeInvariants]]
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 (* This is the end function which effective calculates trilinear invariants (and matching coefficients with particular subgroup embeddings which are determined in AuxiliarRegularDecompositionOfGroup) *)
@@ -3023,428 +3300,1485 @@ Return[IdentifyGroupName[{Length[mats],aux[[1,1]]}]];
 
 
 (* ::Input::Initialization:: *)
+(* Similar to RepsUpToDimNNoConjugates but instead of factoring out only conjugations, it factors out all group automorphisms [which for SO(2n) might not be just the conjugations] *)
+Options[RepsUpToDimNFactoringAutomorphisms]={UseName->False,SortResult->True};
+RepsUpToDimNFactoringAutomorphisms[group_,maxDim_,OptionsPattern[]]:=Module[{aux,cR,cRTag,rTag,result},
+aux=RepsUpToDimN[group,maxDim];
+aux=GatherBy[aux,Sort[RepsRelatedByAutomorphismGroup[group,#]]&];
+result=Table[SortBy[el,Join[{RepresentationIndex[group,#]},ConjugacyClass[group,#],-#]&],{el,aux}][[All,1]];
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+If[OptionValue[SortResult],result=Sort[result,OrderedQ[{Join[{DimR[group,#1],RepresentationIndex[group,#1]},ConjugacyClass[group,#1],-#1],Join[{DimR[group,#2],RepresentationIndex[group,#2]},ConjugacyClass[group,#2],-#2]}]&]];
 
-(* Returns the sum of the ranks of the subgroup factors which are chiral *)
-CheckChiralityOfSubgroup[subgroup_]:=Module[{aux},
-aux=DeleteCases[subgroup,x_/;x==U1||x==SU2];
-aux=Cases[CMtoFamilyAndSeries/@aux,x_/;x[[1]]=="A"||x=={"E",6}||x[[1]]=="D"&&!EvenQ[x[[2]]]];
-Return[Total[aux[[All,2]]]];
-]
+If[OptionValue[UseName],result=RepName[group,#]&/@result];
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-(* Options OriginalGroup and StartingProjectionMatrix is not to be used by the end-user *)
-(* StrictEquality \[Rule] True is not very useful; its functioning is somewhat non-intuitive *)
-(* DeleteU1s \[Rule] True deletes any U1 factor subgroup found along the calculations; subgroup should not contain U1's *)
-
-
-(* This function uses the LooseMatch\[Rule]True option to compare embeddings. So, if the two embeddings produce the same non-abelian decomposition, and if subgroup1In has the same or more U1s than subgroup2In, only the embidding with more U1s is kept. This option is very convenient for the function FindAllEmbeddingsAUX. Why? Because in FindAllEmbeddingsAUX we are garanteed to go throught all possible embeddings. Some of the embedding which appear for analysis in FindAllEmbeddingsAUX might have U1's removed but we are assured that in the set of all embeddings with the same non-abelian branching rules and more U1's we will find those embeddings as subembeddings.
-
-Likewise, by using the option TreatSO2NCorrectly\[Rule]False to compare embeddings, the code will not look at the decomposition of the spinor rep of SO(2n) groups. However, looking at the spinor representation is used only to break the degeneracy between an embedding and its conjugate. And we do not mind confusing these two embedding in the middle of the recursive calculations because at the very end of the calculations, the list of embeddings is expanded to include A)-symmetries of the final subgroup, including conjugation of the factor subgroup and B)- permutation of equal factor subgroups.
- *)
-
-(* Quick and VeryQuickLimit are also not to be used by the user. They are only used indirectly by MaximalSubgroups via IsSubEmbeddingQ to look for embeedings quickly without removing duplicates. Calculations might also be althogheter if many embeddings (more than VeryQuickLimit) are found *)
-
-
-FindAllEmbeddings[groupIn_,subgroupIn_]:=Module[{group,subgroup,result},
-group=If[IsSimpleGroupQ[groupIn],{groupIn},groupIn];
-subgroup=If[IsSimpleGroupQ[subgroupIn],{subgroupIn},subgroupIn];
-
-result=FindAllEmbeddingsAUX[group,subgroup];
 Return[result];
 ]
 
-Options[FindAllEmbeddingsAUX]={OriginalGroup->Null,StartingProjectionMatrix->Null,StrictEquality->False,DeleteU1s->False,Quick->False,VeryQuickLimit->-1};
-FindAllEmbeddingsAUX[currentG_,subgroupIn_]:=FindAllEmbeddingsAUX[currentG,subgroupIn,OriginalGroup->Null,StartingProjectionMatrix->Null,StrictEquality->False,DeleteU1s->False,Quick->False];
-FindAllEmbeddingsAUX[currentG_,subgroupIn_,OptionsPattern[]]:=FindAllEmbeddingsAUX[currentG,subgroupIn,OriginalGroup->OptionValue[OriginalGroup],StartingProjectionMatrix->OptionValue[StartingProjectionMatrix],StrictEquality->OptionValue[StrictEquality],DeleteU1s->OptionValue[DeleteU1s],Quick->OptionValue[Quick],VeryQuickLimit->OptionValue[VeryQuickLimit]]=Module[{originalGroup,subgroup,currentProjectionMatrix,aux,aux1,aux2,aux3,aux4,continue,subgroupMatrixQ,continueQ,result,subgroup1,subgroup2,startP,endP,indicesOfRootsOfFactorGroups1,indicesOfRootsOfFactorGroups2,projectionMatrix2,positionNonU1s},
 
-currentProjectionMatrix=If[OptionValue[StartingProjectionMatrix]===Null,IdentityMatrix[Total[Max[Length[#],1]&/@currentG]],OptionValue[StartingProjectionMatrix]];
+(* ::Input::Initialization:: *)
+(* Provides a list of representations obtainable from 'rep' via an automorphism of a simple group *)
+RepsRelatedByAutomorphismGroup[simpleGroup_,rep_]:=RepsRelatedByAutomorphismGroup[simpleGroup,rep]=Module[{family,series,repMod},
 
-originalGroup=If[OptionValue[OriginalGroup]===Null,currentG,OptionValue[OriginalGroup]];
+If[simpleGroup===SO8,Return[DeleteDuplicates[{rep,rep[[{1,2,4,3}]],rep[[{3,2,1,4}]],rep[[{3,2,4,1}]],rep[[{4,2,1,3}]],rep[[{4,2,3,1}]]}]]];
+If[simpleGroup===SU2||simpleGroup===E7||simpleGroup===E8||simpleGroup===G2||simpleGroup===F4,Return[{rep}]];
 
-originalGroup=If[IsSimpleGroupQ[originalGroup],{originalGroup},originalGroup];
-subgroup=If[IsSimpleGroupQ[subgroupIn],{subgroupIn},subgroupIn];
+If[simpleGroup===E6,
+repMod=rep;
+repMod[[1;;5]]=Reverse[repMod[[1;;5]]];
+Return[DeleteDuplicates[{rep,repMod}]]];
 
-aux1=Sort[DeleteCases[currentG,U1]/.{SP4->SO5,SO6->SU4}];
-aux2=Sort[DeleteCases[subgroup,U1]/.{SP4->SO5,SO6->SU4}];
+
+{family,series}=CMtoFamilyAndSeries[simpleGroup];
+
+If[family=="A",Return[DeleteDuplicates[{rep,Reverse[rep]}]]];
+If[family=="B"||family=="C",Return[{rep}]];
+
+If[family=="D",
+repMod=rep;
+repMod[[{-2,-1}]]=repMod[[{-1,-2}]];
+Return[DeleteDuplicates[{rep,repMod}]]];
+]
 
 
-If[OptionValue[StrictEquality]&&!OptionValue[DeleteU1s]&&aux1==aux2&&Count[currentG,U1]==Count[subgroup,U1],Return[{{currentG,currentProjectionMatrix}}]];
+(* ::Input::Initialization:: *)
+(* Returns the permutations on the Dynkin coefficients performed by the automorphisms of a simple group *)
+AutomorphismGroupTransformation[group_]:=AutomorphismGroupTransformation[group]=RepsRelatedByAutomorphismGroup[group,Range[Length[group]]]
 
-If[OptionValue[StrictEquality]&&OptionValue[DeleteU1s]&&aux1==aux2&&Count[currentG,U1]>=Count[subgroup,U1],
 
-aux=Max[1,Length[#]]&/@currentG;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-indicesOfRootsOfFactorGroups1=Range@@@Transpose[{startP,endP}];
+(* ::Input::Initialization:: *)
+(* For any semi-simple Lie group, extracts the positions of U1 and non-U1 factors *)
+PositionU1sAndNonU1s[group_]:=Module[{positionU1s,positionNonU1s},
+positionU1s=Flatten[Position[group,U1]];
+positionNonU1s=Complement[Range[Length[group]],positionU1s];
 
-positionNonU1s=Flatten[Position[currentG,x_/;x=!=U1,{1},Heads->False]];
-Return[{{currentG[[positionNonU1s]],currentProjectionMatrix[[Flatten[indicesOfRootsOfFactorGroups1[[positionNonU1s]]]]]}}];
+Return[{positionU1s,positionNonU1s}];
+]
+
+
+(* ::Input::Initialization:: *)
+AbelianPartSeparation[group_]:=Module[{pU1s,pNonU1s},
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[group];
+
+Return[{Sort[group[[pNonU1s]]],Length[pU1s]}];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Output is a pair of lists {X,Y} such that (diag gen groupRef) = (diag gen group)[[Y]] and group[[X]]=groupRef. *)
+(* But group is allowed to have more U(1)'s than groupRef ++at the end++; {X,Y} do not reference those U(1)'s. *)
+(* Eg: ReshuffleGroupFactorsRows[{SU4,SU7,U1,U1,U1,U1,U1},{U1,SU4,U1,SU7,U1}]={{3,1,4,2,5},{10,1,2,3,11,4,5,6,7,8,9,12}} *)
+ReshuffleGroupFactorsRows[group_,groupRef_]:=Module[{aux,rowOrdering,startS,endS,relevantRowsToShuffle,ordering,groupMod},
+aux=Max[1,Length[#]]&/@group;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
+relevantRowsToShuffle=Range@@@Transpose[{startS,endS}];
+
+groupMod=group[[1;;Length[groupRef]]];
+ordering=Ordering[groupMod][[InvertOrdering[Ordering[groupRef]]]];
+aux=Flatten[relevantRowsToShuffle];
+rowOrdering=Flatten[relevantRowsToShuffle[[ordering]]];
+
+Return[{ordering,rowOrdering}];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Numbers associated to U1s and non-U1s diagonal generators. Word 'rows' here is a bit missleading: the output corresponds to rows if the input is a subgroup H, and columns if it is the group G *)
+AbelianAndNonAbelianRows[group_]:=Module[{pU1s,pNonU1s,aux,startS,endS,relevantRows,abelianRows,nonAbelianRows},
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[group];
+
+aux=Max[1,Length[#]]&/@group;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
+relevantRows=Range@@@Transpose[{startS,endS}];
+
+abelianRows=Flatten[relevantRows[[pU1s]]];
+nonAbelianRows=Flatten[relevantRows[[pNonU1s]]];
+
+Return[{abelianRows,nonAbelianRows}];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Used in EmbeddingsOnSUN *)
+(* A reducible rep of 'group' (which has no U1s) is a list of irreducible reps. For a reducible rep, (a) apply all the group's automorphism and (b) permute equal factor groups. Sort the irreps. Take a representative sample from this set, which is the signature of the 'reducibleRep'. Note that in step (a) the automorphism must be applied to all irreps in the same way at the same time. *)
+SignatureOfRep[group_,reducibleRep_]:=Module[{automorphisms,repWithGroupAutomorphismVariations,sameGroupFactors,aux,permutations,repWithGroupAutomorphismVariationsAndPermutations,signature},
+
+(* Automorphism variations *) 
+automorphisms=AutomorphismGroupTransformation/@group;
+repWithGroupAutomorphismVariations=Table[reducibleRep[[i,j,auto]],{i,Length[reducibleRep]},{j,Length[group]},{auto,automorphisms[[j]]}];
+repWithGroupAutomorphismVariations=Transpose[Tuples/@repWithGroupAutomorphismVariations,{2,1}];
+
+(* Same group factor permutations *) 
+sameGroupFactors={#[[1,1]],#[[All,2]]}&/@GatherBy[Transpose[{group,Range[Length[group]]}],#[[1]]&];
+aux=Flatten/@Tuples[Permutations/@sameGroupFactors[[All,2]]];
+permutations=#[[aux[[1]]]]&/@aux;
+
+repWithGroupAutomorphismVariationsAndPermutations=Flatten[repWithGroupAutomorphismVariations[[All,All,#]]&/@permutations,1];
+
+signature=Sort[Sort/@repWithGroupAutomorphismVariationsAndPermutations][[1]];
+
+Return[signature];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Just like Weights, but also works with U1s *)
+WeightsAUX[cm_,rep_]:=If[cm===U1,{{rep,1}},Weights[cm,rep]]
+
+
+(* ::Input::Initialization:: *)
+(* This function (a) works also with U1's and (b) if 'rep' has extra U1 charges at the end even if there are no matching U1s in 'cm', it is not a problem *)
+WeightsGeneral[cm_,rep_]:=Module[{cmMod,aux,result},
+
+(* Add as many U1's as needed at the end *)
+cmMod=Join[cm,ConstantArray[U1,Length[Flatten[rep]]-Total[Length/@cm]-Count[cm,U1]]];
+aux=Tuples[MapThread[WeightsAUX,{cmMod,rep}]];
+result={#[[All,1]],Times@@#[[All,2]]}&/@aux;
+
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+SignOfWeight[w_]:=Sign[FirstCase[w,x_/;x=!=0,0]]
+
+
+(* ::Input::Initialization:: *)
+DisplayEmbeddings[embs_,nColumns_:5]:=Module[{data,grid},
+data={CMtoName[#[[1]]],MatrixForm[#[[2]]]}&/@embs;
+data=Column[#,Center]&/@data;
+grid=Grid[If[Length[data]>=nColumns,PartitionPadded[data,nColumns],{data}],Frame->All,FrameStyle->{Lighter[Gray,0.6],Thick},Background->{{{None,None}},{{Lighter[Gray,0.8],None}}},ItemSize->Full];
+
+Return[grid];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Modification of ImportantReps *)
+(* This function returns one rep for each simple group, whose decomposition distinguishes different embeddings up to isomorphisms of that simple group. This is true even for the SO(4n). *)
+
+DefiningReps[group_]:=Module[{familyAndSeries,aux,result,family,series,tbl},
+
+(* If group is not simple *)
+If[!IsSimpleGroupQ[group],
+aux=DefiningReps/@group;
+result=Table[UnitVector[Length[group],i]aux,{i,Length[group]}];
+result=DeleteDuplicates[Flatten[Tuples/@result,1]];
+Return[result];
 ];
 
-If[!OptionValue[StrictEquality]&&aux1==aux2&&Count[currentG,U1]>=Count[subgroup,U1],Return[{{currentG,currentProjectionMatrix}}]];
+If[group===U1,Return[{1}]];
+If[group===SO8,Return[{{1,0,0,0}}]];
+
+{family,series}=CMtoFamilyAndSeries[group];
+
+If[family==="A"||family==="B"||family==="C",Return[{UnitVector[series,1]}]];
+If[family==="D",Return[{UnitVector[series,1]}]];
+
+If[family==="G",Return[{{0,1}}]];
+If[family==="F",Return[{{0,0,0,1}}]];
+If[family==="E"&&series===6,Return[{UnitVector[series,1]}]];
+If[family==="E"&&series===7,Return[{{0,0,0,0,0,1,0}}]];
+If[family==="E"&&series===8,Return[{{0,0,0,0,0,0,1,0}}]];
+
+Return[result];
+]
 
 
-continueQ=If[Max[Length/@aux1]>=Max[Length/@aux2]&&Total[Length/@aux1]>=Total[Length/@aux2]&&Total[(Length/@currentG)/. {0->1}]>=Total[(Length/@subgroup)/. {0->1}],True,False];
-If[!continueQ,Return[{}]];
+(* ::Input::Initialization:: *)
+(* Decomposes the defining reps [=DefiningReps] using some embeddings *)
+Options[DecomposeDefiningReps]={UseName->False};
+DecomposeDefiningReps[group_,embedding_,OptionsPattern[]]:=Module[{reps,subgroup,projectionMatrix,result},
+reps=DefiningReps[group];
+{subgroup,projectionMatrix}=embedding;
 
-aux2=Reap[Do[
-If[currentG[[i]]!=U1,
-(* OnlyMaximalSubgroups\[Rule]False *)
-aux=MaximalSubgroups[currentG[[i]],RplusS->False,OnlyMaximalSubgroups->True,ConsiderSO8Symmetries->False];
+result=DecomposeRep[group,#,subgroup,projectionMatrix,UseName->OptionValue[UseName]]&/@reps;
+Return[result];
+]
 
-If[OptionValue[DeleteU1s],aux=DeleteU1sFromConsideration[#[[1]],#[[2]]]&/@aux];
 
-Do[
-aux1=ChainProjectionMatrices[currentG,currentProjectionMatrix,aux[[j,1]],aux[[j,2]],i];
-Sow[aux1];
+(* ::Input::Initialization:: *)
+(* Decomposes the defining reps [=DefiningReps] using some embedding. It ignores U1s in the subgroup *)
+(* It assumes that U1s of group are the end *)
+DecomposeDefiningRepsIgnoringU1s[group_,embedding_]:=Module[{reps,subgroup,projectionMatrix,result,pU1s,pNonU1s,aux,startS,endS,projectionMatrices},
+reps=DefiningReps[group];
+{subgroup,projectionMatrix}=embedding;
 
-,{j,Length[aux]}];
-];
-,{i,Length[currentG]}]][[2,1]];
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[subgroup];
+subgroup=subgroup[[pNonU1s]];
+projectionMatrix=projectionMatrix[[1;;-1-Length[pU1s]]];
 
- aux2=ReorderGroupFactors/@aux2; 
- aux2=DeleteDuplicates[aux2];
+aux=Max[1,Length[#]]&/@group;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
 
-(* Also consider reducing the group by 'fusing' equal non-abelian factors (ie, taking their diagonal part) *)
-aux2=Join[aux2,FuseTwoEqualFactorGroups[{currentG,currentProjectionMatrix},MinimalSubgroupFactorSize->Max[Min[Length/@subgroup],1]]];
+projectionMatrices=Table[projectionMatrix[[All,startS[[i]];;endS[[i]]]],{i,Length[group]}];
+result=Table[DecomposeRep2[group[[i]],reps[[i,i]],subgroup,projectionMatrices[[i]]],{i,Length[group]}];
+Return[result];
+]
 
-If[OptionValue[Quick]=!="VeryQuick",aux2=DeleteDuplicateEmbeddingsCases2[currentG,aux2,LooseMatch->True,TreatSO2NCorrectly->False,UseAlsoGroupSymmetry->False,Quick->OptionValue[Quick]]];
 
+(* ::Input::Initialization:: *)
 (*
-aux2=DeleteDuplicateEmbeddingsCases[originalGroup,aux2];
+- group must be simple;
+- subgroup cannot have U(1)s
+- no simple input
+- output (right now) has multiplicity of subreps
 *)
 
-(*  [START] Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [START] Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [START] Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [START] Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [START] Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
+(* Algorithm: track the dominant weights of the subgroup. Those are the potential subreps. Now track the domininant weights of each of these potential subreps, and solve the linear system *)
 
-(* aux2=DeleteCases[aux2,x_/;CheckChiralityOfSubgroup[x[[1]]]<Length[subgroup]]; *)
+DecomposeRep2[group_,rep_,subgroup_,projectionMatrix_]:=Module[{ws,wps,posDominantWeights,domWps,myIndex,aux,aux2,mat,b,result,ctr},
+ws=Weights[group,rep];
+wps=ws[[All,1]].Transpose[SparseArray[projectionMatrix,Dimensions[projectionMatrix]]];
+wps=Normal[wps];
 
-(*  [END]   Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [END]   Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [END]   Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [END]   Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
-(*  [END]   Retain only those cases for which the subgroup without U1s is chiraly embbeded in group *)
+posDominantWeights=Flatten[Position[wps,x_/;x==Abs[x],{1}]];
 
+domWps=MapThread[List,{wps[[posDominantWeights]],ws[[posDominantWeights,2]]}];
+domWps={#[[1,1]],Total[#[[All,2]]]}&/@GatherBy[domWps,#[[1]]&];
 
-If[aux2!={},
-result=Reap[Do[
-
-aux=FindAllEmbeddingsAUX[auxI[[1]],subgroup,OriginalGroup->originalGroup,StartingProjectionMatrix->Null,StrictEquality->OptionValue[StrictEquality],DeleteU1s->OptionValue[DeleteU1s],Quick->OptionValue[Quick],VeryQuickLimit->OptionValue[VeryQuickLimit]];
-If[aux==="Aborted",Return["Aborted"]]; (* Only exists the Do, so another Return is needed right after the Do *)
-If[aux!={},Sow[{#[[1]],#[[2]].auxI[[2]]}&/@aux],Sow[{}]]; 
-
-,{auxI,aux2}]];
-If[aux==="Aborted",Return["Aborted"]];
-result=Flatten[result[[2,1]],1];
-];
-
-result=ReorderGroupFactors/@result;
-result=DeleteDuplicates[result];
+ClearAll[myIndex];
+Do[myIndex[domWps[[domI,1]]]=domI,{domI,Length[domWps]}];
 
 
-(* Two embeddings which differ by SO8 symmetries in **currentG** should not be considered equal. The logic is this: the embeddings currentG\[Rule]subgroup will be used in the chain group \[Rule] currentG \[Rule] subgroup and the result of group \[Rule] currentG will always factor out the symmetries of currentG. So these must be taken care of in currentG\[Rule]subgroup *)
+aux=WeightsModDominants[subgroup,{#[[1]],1}]&/@domWps;
+aux2=Map[{myIndex[#[[1]]],#[[2]]}&,aux,{2}];
 
-If[OptionValue[Quick]=!="VeryQuick",result=DeleteDuplicateEmbeddingsCases2[currentG,result,LooseMatch->True,TreatSO2NCorrectly->False,UseAlsoGroupSymmetry->False,Quick->OptionValue[Quick]]];
+(* linear system matrix and vector *)
+mat=SparseArray[Flatten[Table[{i,aux2[[i,j,1]]}->aux2[[i,j,2]],{i,Length[aux2]},{j,Length[aux2[[i]]]}],1]]//Transpose;
+b=domWps[[All,2]];
+result=LinearSolve[mat,b];
 
+result=DeleteCases[MapThread[List,{domWps[[All,1]],result}],x_/;x[[2]]==0];
 
-(* ************************************************************************************************************************************************************* *)
-(* **********  FindAllEmbeddingsAUX is run recursively. The following code is meant to prepare the final output so it is run only for the initial call of  FindAllEmbeddingsAUX ********** *)
-(* ************************************************************  It makes final preparations for output ************************************************************* *)(* ************************************************************************************************************************************************************* *)
+ctr=0;
+aux2=Table[ctr+=Length[subG];ctr+Range[Length[subG]]-Length[subG],{subG,subgroup}];
 
-If[currentProjectionMatrix==IdentityMatrix[Total[Max[Length[#],1]&/@currentG]]&&originalGroup===currentG,
+result=Table[{el[[1,#]]&/@aux2,el[[2]]},{el,result}];
 
-(*  >>>>>>>>>>>>>>>>>>>>>> [START] Reorder subgroup factors in result, so that they match the one in the subgroup variable <<<<<<<<<<<<<<<<<<<< *)
-If[result=!={},
-result=Reap[Do[
-subgroup1=Join[subgroup,ConstantArray[U1,Length[resI[[1]]]-Length[subgroup]]];
-subgroup2=resI[[1]];
-projectionMatrix2=resI[[2]];
+(* Expand multiplicity *)
+result=Flatten[ConstantArray[#[[1]],#[[2]]]&/@result,1];
 
-aux=Max[1,Length[#]]&/@subgroup1;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-indicesOfRootsOfFactorGroups1=Range@@@Transpose[{startP,endP}];
-
-aux=Max[1,Length[#]]&/@subgroup2;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-indicesOfRootsOfFactorGroups2=Range@@@Transpose[{startP,endP}];
-
-(* >>>> [START] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
-aux=Flatten[Position[subgroup2,SP4]];
-projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux]]]]]=projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux,{2,1}]]]]];
-aux=Flatten[Position[subgroup2,SO6]];
-projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux]]]]]=projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux,{2,1,3}]]]]];
-subgroup2=subgroup2/.{SP4->SO5,SO6->SU4};
-(* >>>> [END] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
-
-aux=Ordering[subgroup2][[InvertOrdering[Ordering[subgroup1]]]]; (*i.e, aux is such that subgroup2[[aux]]==subgroup1 *)
-subgroup2=subgroup2[[aux]];
-projectionMatrix2=projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux]]]]];
-
-Sow[{subgroup2,projectionMatrix2}];
-
-,{resI,result}]][[2,1]];
-];
-(* >>>>>>>>>>>>>>>>>>>>>> [END] Reorder subgroup factors in result, so that they match the one in the subgroup variable <<<<<<<<<<<<<<<<<<<< *)
-
-If[OptionValue[Quick]=!="VeryQuick",result=DeleteDuplicateEmbeddingsCases2[currentG,result,LooseMatch->True,TreatSO2NCorrectly->False,UseAlsoGroupSymmetry->True,Quick->OptionValue[Quick]]];
-
-];
-
-If[OptionValue[Quick]==="VeryQuick"&&OptionValue[VeryQuickLimit]=!=-1&&Length[result]>OptionValue[VeryQuickLimit],Return["Aborted"]];
 Return[result];
-
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-DeleteU1sFromConsideration[subgroup_,projectionMatrix_]:=Module[{aux,startP,endP,posNonU1,subgroupMod,projectionMatrixMod},
-aux=Max[1,Length[#]]&/@subgroup;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
+(* ::Input::Initialization:: *)
+(* This is different from SignatureOfRep (!) *)
 
-posNonU1=Sort[Complement[Range[Length[subgroup]],Flatten[Position[subgroup,U1][[All,1]]]]];
+(*
+The idea is for each embedding to explore all others related by
+(1) permutations of the group factors,
+(2) permutations of the subgroup factors,
+(3) automorphisms of the group factors,
+(4) automorphisms of the subgroup factors
+and retain only one of them [the embedding's signature], picked up in a consistent way
+*)
 
-subgroupMod=subgroup[[posNonU1]];
+(* U(1)'s are ignored from consideration as their number is considered to be maximal in the subgroup (they DO NOT need to be at the end); group should have no U(1)'s *)
 
-aux=Flatten[Range@@@Transpose[{startP[[posNonU1]],endP[[posNonU1]]}]];
-projectionMatrixMod=projectionMatrix[[aux]];
-Return[{subgroupMod,projectionMatrixMod}];
+SignatureOfEmbedding[groupIn_,embedding_]:=Module[{aux,startS,endS,relevantRows,columnPermutations,signatures},
+
+(* For SO(8) it is important to also consider the automorphism of 'groupIn'. If there are no SO(8)'s, then just call SignatureOfEmbeddingAUX *)
+If[MemberQ[groupIn,SO8],
+aux=Max[1,Length[#]]&/@groupIn;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
+relevantRows=Range@@@Transpose[{startS,endS}];
+
+aux=Table[If[groupIn[[i]]===U1,{relevantRows[[i]]},relevantRows[[i,#]]&/@AutomorphismGroupTransformation[groupIn[[i]]]],{i,Length[groupIn]}];
+columnPermutations=Flatten/@Tuples[aux];
+
+signatures=SignatureOfEmbeddingAUX[groupIn,{embedding[[1]],embedding[[2,All,#]]}]&/@columnPermutations;
+Return[Sort[signatures][[1]]];
+
+,
+Return[SignatureOfEmbeddingAUX[groupIn,embedding]];
+];
+];
+
+SignatureOfEmbeddingAUX[groupIn_,embedding_]:=Module[{subgroup,projectionMatrix,pU1s,pNonU1s,initialDecomposition,sameGroupFactors,decompositions,aux,permutations,sameSubgroupFactors,automorphisms,signature,group},
+
+{subgroup,projectionMatrix}=embedding;
+
+(* remove U(1)'s from group *)
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[groupIn];
+projectionMatrix=projectionMatrix[[All,AbelianAndNonAbelianRows[groupIn][[2]]]];
+group=groupIn[[pNonU1s]];
+
+(* remove U(1)'s from subgroup - they are irrelevant assuming a maximal number of them *)
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[subgroup];
+projectionMatrix=projectionMatrix[[AbelianAndNonAbelianRows[subgroup][[2]]]];
+subgroup=subgroup[[pNonU1s]];
+
+
+(* decompose the defining reps of group *)
+initialDecomposition=DecomposeDefiningRepsIgnoringU1s[group,{subgroup,projectionMatrix}];
+
+(* ------------------------------------------------------------------------------------------- *)
+(* ------------------------------- Same group factor permutations ------------------------------- *) 
+(* ------------------------------------------------------------------------------------------- *)
+
+sameGroupFactors={#[[1,1]],#[[All,2]]}&/@GatherBy[Transpose[{group,Range[Length[group]]}],#[[1]]&];
+aux=Flatten/@Tuples[Permutations/@sameGroupFactors[[All,2]]];
+permutations=#[[aux[[1]]]]&/@aux;
+
+(* indices of decompositions=[group permutation, group factor, subgroup irrep, subgroup factor irrep] *)
+decompositions=initialDecomposition[[#]]&/@permutations;
+
+
+(* ------------------------------------------------------------------------------------------- *)
+(* ----------------------------- Same subgroup factor permutations ------------------------------ *) 
+(* ------------------------------------------------------------------------------------------- *)
+
+sameSubgroupFactors={#[[1,1]],#[[All,2]]}&/@GatherBy[Transpose[{subgroup,Range[Length[subgroup]]}],#[[1]]&];
+aux=Flatten/@Tuples[Permutations/@sameSubgroupFactors[[All,2]]];
+
+permutations=#[[aux[[1]]]]&/@aux;
+
+(* indices of decompositions=[group & subgroup permutation, group factor, subgroup irrep, subgroup factor irrep] *)
+decompositions=Flatten[Table[dec[[All,All,#]]&/@permutations,{dec,decompositions}],1];
+
+(* ------------------------------------------------------------------------------------------- *)
+(* --------------------------------- Automorphisms of subgroup --------------------------------- *) 
+(* ------------------------------------------------------------------------------------------- *)
+
+automorphisms=Tuples[AutomorphismGroupTransformation/@subgroup];
+
+decompositions=Flatten[Table[MapThread[Part,{subgroupIrrep,automorphism}],{automorphism,automorphisms},{dec,decompositions},{groupItem,dec},{subgroupIrrep,groupItem}],{{1,2}}];
+
+
+
+
+(* Sort the subgroup irreps *)
+decompositions=Map[Sort,decompositions,{2}];
+signature=Sort[decompositions][[1]];
+Return[signature];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-ReorderGroupFactors[{subgroupIn_,projectionMatrixIn_}]:=Module[{subgroup,aux,startP,endP,indicesOfRootsOfFactorGroups,projectionMatrix},
-subgroup=subgroupIn;
-projectionMatrix=projectionMatrixIn;
+(* ::Input::Initialization:: *)
+(* A little different from GroupsWithRankN2. No interest here in having repetitions: SP4 and SO5; SO6 and SU4 *)
+
+SimpleGroupsWithRankN[n_]:=Module[{result},
+result={};
+
+(* SU(m)'s *)
+If[n>=1,AppendTo[result,CartanMatrix["SU",n+1]]];
+
+(* SO(m)'s *)
+If[n==2,AppendTo[result,CartanMatrix["SO",5]]];
+If[n==3,AppendTo[result,CartanMatrix["SO",7]]];
+If[n>=4,result=Join[result,{CartanMatrix["SO",2n],CartanMatrix["SO",2n+1]}]];
+
+(* SP(2m)'s *)
+If[n>=3,AppendTo[result,CartanMatrix["SP",2n]]];
+
+(* Exceptional groups *)
+If[n==2,AppendTo[result,G2]];
+If[n==4,AppendTo[result,F4]];
+If[n==6,AppendTo[result,E6]];
+If[n==7,AppendTo[result,E7]];
+If[n==8,AppendTo[result,E8]];
+
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+SemiSimpleGroupsWithRankN[n_]:=Module[{partitions,result},
+If[n==0,Return[{}]];
+partitions=IntegerPartitions[n];
+result=DeleteDuplicates[Sort/@Flatten[Tuples/@Map[SimpleGroupsWithRankN,partitions,{2}],1]];
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Expand using (1) automorphisms of the group, (2) automorphisms of each simple factor subgroup and (3) permutations of equal factor subgroups *)
+Options[ExpandOneEmbedding]={Expansions->{1,2,3}};
+ExpandOneEmbedding[simpleGroup_,embedding_,OptionsPattern[]]:=Module[{subgroup,projectionMatrix,baseEmbeddigns,automorphisms,embeddings,result,aux,startS,endS,nU1s,nonAbelianSubgroupPart,sameSubgroupFactors,newEmbeddings,permutations,factorGroupRows,rowPermutations,subGs,prjsMats},
+
+{subgroup,projectionMatrix}=embedding;
+
+embeddings={embedding};
+
+If[subgroup==ConstantArray[U1,Length[subgroup]],Return[embeddings]];
+(* ------------------------------------------------------------------------------- *)
+(* --------------------------- Automorphisms of the group --------------------------- *)
+(* ------------------------------------------------------------------------------- *)
+If[MemberQ[OptionValue[Expansions],1],
+automorphisms=AutomorphismGroupTransformation[simpleGroup];
+embeddings=Table[{emb[[1]],emb[[2,All,#]]}&/@automorphisms,{emb,embeddings}];
+embeddings=Flatten[embeddings,1];
+];
+(* ------------------------------------------------------------------------------- *)
+(* ------------------------ Automorphisms of the subgroup ------------------------ *)
+(* ------------------------------------------------------------------------------- *)
+If[MemberQ[OptionValue[Expansions],2],
+nU1s=Count[subgroup,U1];
+nonAbelianSubgroupPart=subgroup[[1;;-1-nU1s]];
+
 aux=Max[1,Length[#]]&/@subgroup;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-indicesOfRootsOfFactorGroups=Range@@@Transpose[{startP,endP}];
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
 
-(* >>>> [START] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
-aux=Flatten[Position[subgroup,SP4]];
-projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]]=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux,{2,1}]]]]];
-aux=Flatten[Position[subgroup,SO6]];
-projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]]=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux,{2,1,3}]]]]];
-subgroup=subgroup/.{SP4->SO5,SO6->SU4};
-(* >>>> [END] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
+automorphisms=AutomorphismGroupTransformation/@nonAbelianSubgroupPart;
 
-aux=Table[{subgroup[[i]],projectionMatrixIn[[indicesOfRootsOfFactorGroups[[i]]]]},{i,Length[subgroup]}];
-aux=Reverse[Ordering[aux]]; (*i.e, aux is such that subgroup[[aux]]\[Equal]<subgroup with ordered factors> *)
-subgroup=subgroup[[aux]];
-projectionMatrix=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]];
+embeddings=Reap[Do[
+aux=Reap[Do[
+
+Sow[emb[[2,startS[[subgroupI]];;endS[[subgroupI]]]][[#]]&/@automorphisms[[subgroupI]]];
+
+,{subgroupI,Length[nonAbelianSubgroupPart]}]][[2,1]];
+
+(* Do not forget the U1 lines *)
+aux=Append[aux,{emb[[2,Total[Length/@nonAbelianSubgroupPart]+1;;-1]]}];
+
+aux=Join@@@Tuples[aux];
+newEmbeddings={emb[[1]],#}&/@aux;
+Sow[newEmbeddings];
+,{emb,embeddings}]][[2,1]];
+embeddings=Flatten[embeddings,1];
+];
+(* ------------------------------------------------------------------------------- *)
+(* ------------------- Permutations of equal factor subgroups -------------------- *)
+(* ------------------------------------------------------------------------------- *)
+If[MemberQ[OptionValue[Expansions],3],
+sameSubgroupFactors={#[[1,1]],#[[All,2]]}&/@GatherBy[Transpose[{nonAbelianSubgroupPart,Range[Length[nonAbelianSubgroupPart]]}],#[[1]]&];
+aux=Flatten/@Tuples[Permutations/@sameSubgroupFactors[[All,2]]];
+permutations=#[[aux[[1]]]]&/@aux;
+
+factorGroupRows=Table[Range[startS[[i]],endS[[i]]],{i,Length[nonAbelianSubgroupPart]}];
+rowPermutations=Flatten[factorGroupRows[[#]]]&/@permutations;
+
+subGs=embeddings[[All,1]];
+
+prjsMats=embeddings[[All,2]];
+prjsMats=Transpose[ConstantArray[prjsMats,Length[rowPermutations]]];
+
+Do[
+prjsMats[[All,i,rowPermutations[[1]]]]=prjsMats[[All,i,rowPermutations[[i]]]];
+,{i,Length[rowPermutations]}];
+
+embeddings=Flatten[Table[DistributeElementOverList[subGs[[i]],prjsMats[[i]]],{i,Length[subGs]}],1];
+];
+
+Return[embeddings];
+]
+
+
+(* ::Input::Initialization:: *)
+GroupRank[group_]:=If[IsSimpleGroupQ[group],Max[1,Length[group]],Total[Max[1,Length[#]]&/@group]]
+
+
+(* ::Input::Initialization:: *)
+StitchTogetherProjectionMatrices[group_,subgroups_,prjMats_,blocks_]:=Module[{nU1s,nonAbelianSubgroupPart,nColumns,subgroup,aux,startG,startS,endG,endS,result,counterU1s,nRows,length,rows,projectionMatrix},
+
+nU1s=Total[Count[#,U1]&/@subgroups];
+
+aux=MapThread[List,{subgroups,blocks}];
+nonAbelianSubgroupPart=Sort[DeleteDuplicates[Flatten[MapThread[List,{#[[2]],#[[1,1;;Length[#[[2]]]]]}]&/@aux,1]]];
+nonAbelianSubgroupPart=nonAbelianSubgroupPart[[All,2]];
+
+(* This is the full subgroup, with U1s *)
+subgroup=Join[nonAbelianSubgroupPart,ConstantArray[U1,nU1s]];
+
+nRows=Total[Max[Length[#],1]&/@subgroup];
+nColumns=Total[Max[Length[#],1]&/@group];
+projectionMatrix=ConstantArray[0,{nRows,nColumns}];
+
+aux=Max[1,Length[#]]&/@group;
+startG=Accumulate[aux]-aux+1;
+endG=startG+aux-1;
+
+aux=Max[1,Length[#]]&/@subgroup;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
+
+(* Next step: make a list with the row numbers of the final projection matrix corresponding to the projection matrix of each factor of 'group' (ie the matrices 'prjMats')  *)
+aux=Max[1,Length[#]]&/@subgroup;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
+
+counterU1s=nRows-nU1s+1;
+
+Do[
+rows={};
+Do[
+length=Max[Length[subgroup[[subgroupI]]],1];
+rows=Join[rows,Range[startS[[subgroupI]],endS[[subgroupI]]]];
+,{subgroupI,blocks[[grpI]]}];
+
+aux=Count[subgroups[[grpI]],U1];
+rows=Join[rows,Range[counterU1s,counterU1s+aux-1]];
+counterU1s=counterU1s+aux;
+
+(* fill the projectionMatrix *)
+projectionMatrix[[rows,startG[[grpI]];;endG[[grpI]]]]=prjMats[[grpI]];
+
+,{grpI,Length[group]}];
+
 
 Return[{subgroup,projectionMatrix}];
+
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-(* \!\(\(( ... )\)\ 
-\*SubscriptBox[\(\[Rule]\), \(projectionMatrix1\)]\ group1\)={g1,g2,...,gN}; \!\(gI\ 
-\*SubscriptBox[\(\[Rule]\), \(projectionMatrix2\)]\ group2\)={s1,s2,...,sM} ; \!\(\(( ... )\)\ 
-\*SubscriptBox[\(\[Rule]\), \(projectionMatrix3\)]\ group3\)={g1,...,g(I-1),s1,s2,...,sM,g(I+1),...gN} *)
-ChainProjectionMatrices[group1_,projectionMatrix1_,group2_,projectionMatrix2_,i_]:=Module[{group3,aux,start,end,projectionMatrix3,block,blockStart,blockEnd},
+(* ::Input::Initialization:: *)
+(* Finds all embeddings of groupIn on SU(dim) *)
+EmbeddingsOnSUN[groupIn_,dim_]:=Module[{group,pU1s,pNonU1s,aux,solutions,solutionsRaw,nonTrivialRepsOfFactorGroups,auxNonTrivialCharges,equalGroupPos,possibleReps,permutations,permutations2,solutionsFullForm,solutionsFullFormMod,repWithGroupAutomorphismVariations,signatures,variations,dimensions,possibleU1s,solutionsWithU1s,weightsGroup,invM,embeddings,weightsSubgroup,projectionMatrix,groupInRanges,groupMod,groupModRanges,orderingOfFactorGroups,linesPermuted},
 
-aux=group2;
-aux[[0]]=Sequence;
-group3=group1;
-group3[[i]]=aux;
 
-aux=Max[Length[#],1]&/@group1;
-start=Accumulate[Prepend[aux,1][[1;;-2]]];
-end=start+aux-1;
+(* [START] First: ignore U1s in group for now. They are considered at the end *)
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[groupIn];
+group=groupIn[[pNonU1s]];
+(* [END] First: ignore U1s in group for now. They are considered at the end *)
 
-(* In some cases group2 might be null [ie {}], in which case to avoid an error an If is needed here. [group2={} might come from deleting U1's in FindAllEmbeddingsAUX]*)
-If[group2=!={},
-block=projectionMatrix2.projectionMatrix1[[start[[i]];;end[[i]]]];
-,
-block={};
+If[group==={},Return[{{ConstantArray[U1,dim-1],IdentityMatrix[dim-1]}}]];
+
+
+(* Generate list of reps, ignoring variations due to group automorphism *)
+aux=RepsUpToDimNFactoringAutomorphisms[#,dim]&/@group;
+
+possibleReps={#}&/@aux[[1]];
+Do[
+possibleReps=DeleteCases[Append[##]&@@@Tuples[{possibleReps,aux[[i]]}],x_/;Times@@DimR[group[[1;;i]],x]>dim];
+,{i,2,Length[group]}];
+possibleReps={#,Times@@DimR[group,#]}&/@possibleReps;
+possibleReps=DeleteCases[possibleReps,x_/;Times@@x[[2]]>dim];
+
+solutionsRaw=FrobeniusSolve[possibleReps[[All,2]],dim];
+
+nonTrivialRepsOfFactorGroups=Table[Flatten[Position[possibleReps[[All,1,i]],x_/;x!=0x,{1}]],{i,Length[possibleReps[[1,1]]]}];
+auxNonTrivialCharges=Times@@@Transpose[Map[Total,solutionsRaw[[All,#]]&/@nonTrivialRepsOfFactorGroups,{2}]];
+
+solutions=solutionsRaw[[Flatten[Position[auxNonTrivialCharges,Except[0],Heads->False]]]];
+If[Length[solutions]===0,Return[{}]];
+
+(* At this stage 'solutions' contains the valid solutions, but now it is necessary to factor out permutations of equal factor groups *)
+
+aux=DeleteDuplicates[group];
+equalGroupPos=Flatten[Position[group,#]]&/@aux;
+
+aux=Flatten/@Tuples[Permutations[#]&/@equalGroupPos];
+permutations=#[[InvertOrdering[aux[[1]]]]]&/@aux;
+
+aux=possibleReps[[All,1,#]]&/@permutations;
+permutations2=Table[Flatten[Position[el,#]&/@aux[[1]]],{el,aux}];
+
+(* permutations2 now contains the possible ordering of all allowed reps, for each automorphism transformation *)
+
+solutions=DeleteDuplicates[Table[Sort[el[[#]]&/@permutations2][[1]],{el,solutions}]];
+solutionsFullForm=Flatten[#,1]&/@Map[ConstantArray[#[[1]],#[[2]]]&,DeleteCases[Transpose[{possibleReps,#}],x_/;x[[2]]==0]&/@solutions,{2}];
+
+(* solutions/solutionsFullForm now have been reduced by considering previous solutions which only differed by reordering of equal factor subgroups *)
+
+(* consider variations due to the automorphism group activing on each irreducible rep, and which cannot be factored out *)
+solutionsFullFormMod=Reap[Do[
+
+repWithGroupAutomorphismVariations=Tuples[Tuples/@Table[RepsRelatedByAutomorphismGroup[group[[j]],reducibleRep[[i,1,j]]],{i,Length[reducibleRep]},{j,Length[group]}]];
+signatures=SignatureOfRep[group,#]&/@repWithGroupAutomorphismVariations;
+variations=DeleteDuplicates[MapThread[List,{repWithGroupAutomorphismVariations,signatures}],#1[[2]]==#2[[2]]&][[All,1]];
+Sow[variations];
+
+,{reducibleRep,solutionsFullForm}]][[2,1]];
+
+(* XXXXXXXXXXXXXXXXXXXXXX Add the possible hypercharges (number of allowed U1s is variable) XXXXXXXXXXXXXXXXXXXXXX *)
+dimensions=solutionsFullForm[[All,All,2]];
+possibleU1s=NullSpace[{#}]&/@dimensions;
+solutionsWithU1s=Flatten[Table[Transpose[Join[Transpose[#],possibleU1s[[i]]]]&/@solutionsFullFormMod[[i]],{i,Length[solutionsFullForm]}],1];
+
+(* XXXXXXXXXXXXXXXXXXXXXX Now obtain the projection matrices XXXXXXXXXXXXXXXXXXXXXX *)
+(*
+weightsGroup=Weights[CartanMatrix["SU",dim],UnitVector[dim-1,1]][[All,1]];
+invM=PseudoInverse[Transpose[weightsGroup]];
+*)
+invM=PseudoInverseSUN[dim];
+
+embeddings=Reap[Do[
+weightsSubgroup=Flatten/@Flatten[ConstantArray[#[[1]],#[[2]]]&/@Flatten[WeightsGeneral[group,#]&/@el,1],1];
+projectionMatrix=Transpose[weightsSubgroup].invM;
+Sow[{Length[el]-1,projectionMatrix}];
+,{el,solutionsWithU1s}]][[2,1]];
+
+(* [START] Take into account that the user might have included some U1s as input. This means that (1) embeddings with too few U1s should be removed and (2) the lines of the projection matrices should be rearanged to match the user's desire. Extra U1s are placed at the end of the group *)
+embeddings=DeleteCases[embeddings,x_/;x[[1]]<Length[pU1s]];
+
+aux=Max[Length[#],1]&/@groupIn;
+groupInRanges=Range@@@Transpose[StartsEnds[aux]];
+
+groupMod=Join[group,ConstantArray[U1,Length[pU1s]]];
+aux=Max[Length[#],1]&/@groupMod;
+groupModRanges=Range@@@Transpose[StartsEnds[aux]];
+
+orderingOfFactorGroups=Ordering[groupIn][[InvertOrdering[Ordering[groupMod]]]]; (* such that groupIn==groupMod[[InvertOrdering[orderingOfFactorGroups]]] *)
+linesPermuted=Flatten[groupModRanges[[InvertOrdering[orderingOfFactorGroups]]]];
+Do[
+embeddings[[i,2,1;;Length[linesPermuted]]]=embeddings[[i,2,linesPermuted]];
+,{i,Length[embeddings]}];
+(* [END] Take into account that the user might have included some U1s as input. This means that (1) embeddings with too few U1s should be removed and (2) the lines of the projection matrices should be rearanged to match the user's desire. Extra U1s are placed at the end of the group *)
+
+embeddings[[All,1]]=Join[groupIn,ConstantArray[U1,#-Length[pU1s]]]&/@embeddings[[All,1]];
+
+Return[embeddings];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Finds all embeddings of groupIn on SO(dim) *)
+EmbeddingsOnSON[groupIn_,dim_]:=Module[{group,pU1s,pNonU1s,aux,solutions,solutionsRaw,nonTrivialRepsOfFactorGroups,auxNonTrivialCharges,equalGroupPos,possibleReps,permutations,permutations2,solutionsFullForm,solutionsFullFormMod,repWithGroupAutomorphismVariations,signatures,variations,dimensions,possibleU1s, solutionsWithU1s,weightsGroup,invM,embeddings,weightsSubgroup,projectionMatrix,groupInRanges,groupMod,groupModRanges,orderingOfFactorGroups,linesPermuted,automorphismsNoConjugations,automorphisms,posNonRealReps,posRealPairedReps,posRealNonPairedReps,nU1s,posI,newExpr,rowsToKeep,cMatrix},
+
+
+(* [START] First: ignore U1s in group for now. They are considered at the end *)
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[groupIn];
+group=groupIn[[pNonU1s]];
+(* [END] First: ignore U1s in group for now. They are considered at the end *)
+
+If[group==={},Return[{{ConstantArray[U1,Floor[dim/2]],IdentityMatrix[Floor[dim/2]]}}]];
+
+(* Generate list of reps, ignoring variations due to group automorphism *)
+aux=RepsUpToDimNFactoringAutomorphisms[#,dim]&/@group;
+
+possibleReps={#}&/@aux[[1]];
+Do[
+possibleReps=DeleteCases[Append[##]&@@@Tuples[{possibleReps,aux[[i]]}],x_/;Times@@DimR[group[[1;;i]],x]>dim];
+,{i,2,Length[group]}];
+(* possibleReps=Tuples[aux]; *)
+
+possibleReps=If[TypeOfRepresentation[group,#]==="R",{#,Times@@DimR[group,#],"R"},{#,2Times@@DimR[group,#],"Not-R"}]&/@possibleReps;
+possibleReps=DeleteCases[possibleReps,x_/;x[[2]]>dim];
+If[Length[possibleReps]===0,Return[{}]];
+
+solutionsRaw=FrobeniusSolve[possibleReps[[All,2]],dim];
+
+
+nonTrivialRepsOfFactorGroups=Table[Flatten[Position[possibleReps[[All,1,i]],x_/;x!=0x,{1}]],{i,Length[group]}];
+auxNonTrivialCharges=Times@@@Transpose[Map[Total,solutionsRaw[[All,#]]&/@nonTrivialRepsOfFactorGroups,{2}]];
+
+solutions=solutionsRaw[[Flatten[Position[auxNonTrivialCharges,Except[0],Heads->False]]]];
+If[Length[solutions]===0,Return[{}]];
+
+(* At this stage 'solutions' contains the valid solutions, but now it is necessary to factor out permutations of equal factor groups *)
+
+aux=DeleteDuplicates[group];
+equalGroupPos=Flatten[Position[group,#]]&/@aux;
+
+aux=Flatten/@Tuples[Permutations[#]&/@equalGroupPos];
+permutations=#[[InvertOrdering[aux[[1]]]]]&/@aux;
+
+aux=possibleReps[[All,1,#]]&/@permutations;
+permutations2=Table[Flatten[Position[el,#]&/@aux[[1]]],{el,aux}];
+
+(* permutations2 now contains the possible ordering of all allowed reps, for each automorphism transformation *)
+
+solutions=DeleteDuplicates[Table[Sort[el[[#]]&/@permutations2][[1]],{el,solutions}]];
+solutionsFullForm=Flatten[#,1]&/@Map[ConstantArray[#[[1]],#[[2]]]&,DeleteCases[Transpose[{possibleReps,#}],x_/;x[[2]]==0]&/@solutions,{2}];
+(* solutions/solutionsFullForm now have been reduced by considering previous solutions which only differed by reordering of equal factor subgroups *)
+
+(* consider variations due to the automorphism group acting on each irreducible rep, and which cannot be factored out *)
+
+automorphismsNoConjugations=Reap[Do[
+automorphisms=AutomorphismGroupTransformation[grp];
+automorphisms=DeleteDuplicates[automorphisms,ConjugateIrrep[grp,#1]===#2&];
+Sow[automorphisms];
+,{grp,group}]][[2,1]];
+
+solutionsFullFormMod=Reap[Do[
+
+repWithGroupAutomorphismVariations=Tuples[Tuples/@Table[DeleteDuplicates[irrep[[grpI,#]]&/@automorphismsNoConjugations[[grpI]]],{irrep,reducibleRep[[All,1]]},{grpI,Length[group]}]];
+
+
+(* repWithGroupAutomorphismVariations=Map[Sort,repWithGroupAutomorphismVariations,{3}]; *)
+signatures=SignatureOfRep[group,#]&/@repWithGroupAutomorphismVariations;
+variations=DeleteDuplicates[MapThread[List,{repWithGroupAutomorphismVariations,signatures}],#1[[2]]==#2[[2]]&][[All,1]];
+
+Sow[variations];
+,{reducibleRep,solutionsFullForm}]][[2,1]];
+
+
+(* At this point solutionsFullFormMod contains a list of possible decompositions of the fundamental rep of SO(n), where in the case of non-real ones they are shown only once (it is implicitly assumed that its conjugate is also present)
+*)
+(* XXXXXXXXXXXXXXXXXXXXXX Add the possible hypercharges (number of allowed U1s is variable) XXXXXXXXXXXXXXXXXXXXXX *)
+
+solutionsFullFormMod=Flatten[solutionsFullFormMod,1];
+
+solutionsWithU1s=Reap[Do[
+
+posNonRealReps=Flatten[Position[expr,x_/;TypeOfRepresentation[group,x]=!="R",{1},Heads->False]];
+
+aux=DeleteDuplicates[expr];
+aux=Cases[aux,x_/;TypeOfRepresentation[group,x]==="R",{1},Heads->False];
+posRealPairedReps=Flatten[Partition[Flatten[Position[expr,#]],2]&/@aux,1];
+
+posRealNonPairedReps=Complement[Range[Length[expr]],posNonRealReps,Flatten[posRealPairedReps]];
+
+nU1s=Length[posNonRealReps]+Length[posRealPairedReps];
+newExpr=expr;
+
+Do[
+posI=posNonRealReps[[i]];
+
+newExpr[[posI]]=({Join[#,UnitVector[nU1s,i]],Join[ConjugateIrrep[group,#],-UnitVector[nU1s,i]]}&@newExpr[[posI]]);
+
+(* newExpr[[All,posI]]=(Join[#,UnitVector[nU1s,i]]&/@newExpr[[All,posI]]); *)
+,{i,Length[posNonRealReps]}];
+
+Do[
+posI=posRealPairedReps[[i-Length[posNonRealReps]]];
+newExpr[[posI[[1]]]]=({Join[#,UnitVector[nU1s,i]],Join[#,-UnitVector[nU1s,i]]}&@newExpr[[posI[[1]]]]);
+newExpr[[posI[[2]]]]={};
+,{i,Length[posNonRealReps]+1,nU1s}];
+
+newExpr[[posRealNonPairedReps]]=Map[{Join[#,ConstantArray[0,nU1s]]}&,newExpr[[posRealNonPairedReps]],{1}];
+
+Sow[newExpr];
+,{expr,solutionsFullFormMod}]][[2,1]];
+
+solutionsWithU1s=Flatten[#,1]&/@solutionsWithU1s;
+
+(* XXXXXXXXXXXXXXXXXXXXXX Now obtain the projection matrices XXXXXXXXXXXXXXXXXXXXXX *)
+(*
+weightsGroup=Weights[CartanMatrix["SU",dim],UnitVector[dim-1,1]][[All,1]];
+invM=PseudoInverse[Transpose[weightsGroup]];
+*)
+invM=PseudoInverseSON[dim];
+
+embeddings=Reap[Do[
+(* For SO(n) the weights of the fundamental are w_1,w_2,...,w_n/2,-w_n/2,...,-w_2,-w_1 [n even] or w_1,w_2,...,w_(n/2-1/2),0,-w_(n/2-1/2),...,-w_2,-w_1 [n odd]. To extract the projection matrix, match only the subgroup weights associated to w1,w2,.... Ie exclude the 0 and the -w_i. *)
+weightsSubgroup=Flatten/@Flatten[ConstantArray[#[[1]],#[[2]]]&/@Flatten[WeightsGeneral[group,#]&/@el,1],1];
+weightsSubgroup=Cases[weightsSubgroup,x_/;SignOfWeight[x]===1];
+weightsSubgroup=Join[weightsSubgroup,ConstantArray[0,{Floor[dim/2]-Length[weightsSubgroup],Length[weightsSubgroup[[1]]]}]];
+
+projectionMatrix=Transpose[weightsSubgroup].invM;
+
+Sow[{Length[el[[1]]]-Length[group],projectionMatrix}];
+,{el,solutionsWithU1s}]][[2,1]];
+
+
+
+(* [START] For SO(4n): there might be a few more embeddings for which the spinor rep is impCortant *)
+
+(* In the case of SO(4n) groups, there is no conjugation, but there is still an antomorphism of the group. So for a single branching rule (4n)\[Rule]... there can be 1 or 2 projection matrices. One is obtained from the other be swapping the last two columns. However, this swapping of columns might lead to a different but equivalent projection matrix. To know if this is true or not, it is necessary to decompose the spinor rep of SO(4n), which is time consuming. The alternative (much faster is this):
+(1)- Delete the rows of the projection matrix P corresponding to U(1)'s of the subgroup - call that P';
+(2)- Compute Pbinary=P'.C where C=SpinorChangeBasisMat[n];
+(3) - P and P with the last two columns swapped is equivalent if and only if Pbinary has one or more null columns.
+  *)
+
+(* BUT: Don't use the code below, because EmbeddingsOnSON is supposed to return the different embeddings up to automorphisms of SO(n) *)
+(* Uncomment code below if it is ever needed *)
+
+(*
+If[Mod[dim,4]\[Equal]0,
+rowsToKeep=Total[Length/@group];
+cMatrix=SparseArray[SpinorChangeBasisMat[dim]];
+aux={#[[1]],#[[2]],(#[[2,1;;rowsToKeep]].cMatrix)}&/@embeddings;
+aux=Cases[aux,x_/;!MemberQ[Transpose[x[[3]]],y_/;y===0y]][[All,1;;2]];
+
+aux[[All,2,All,{-1,-2}]]=aux[[All,2,All,{-2,-1}]];
+embeddings=Join[embeddings,aux];
 ];
-blockStart=If[i==1,{},projectionMatrix1[[1;;start[[i]]-1]]];
-blockEnd=If[i==Length[group1],{},projectionMatrix1[[end[[i]]+1;;-1]]];
+*)
 
-projectionMatrix3=Join[blockStart,block,blockEnd];
+(* [END] For SO(4n): there might be a few more embeddings for which the spinor rep is important *)
 
-Return[{group3,projectionMatrix3}];
-]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-Options[DeleteDuplicateEmbeddingsCases]={LooseMatch->False,TreatSO2NCorrectly->True};
-DeleteDuplicateEmbeddingsCases[group_,listOfEmbbedings_,OptionsPattern[]]:=Module[{aux},
-(* Do not compare embeddings which are obviously different *)
-aux=Gather[listOfEmbbedings,Sort[Length/@DeleteCases[#1[[1]],U1]]==Sort[Length/@DeleteCases[#2[[1]],U1]]&];
 
-aux=Flatten[Table[DeleteDuplicateEmbeddingsCases\[UnderBracket]Aux[group,el,LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]],{el,aux}],1];
-Return[aux];
-]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-Options[DeleteDuplicateEmbeddingsCases\[UnderBracket]Aux]={LooseMatch->False,TreatSO2NCorrectly->True};
-DeleteDuplicateEmbeddingsCases\[UnderBracket]Aux[group_,listOfEmbbedings_,OptionsPattern[]]:=Module[{result,whatToDo,aux,replacePositions},
-result={};
+(* [START] Take into account that the user might have included some U1s as input. This means that (1) embeddings with too few U1s should be removed and (2) the lines of the projection matrices should be rearanged to match the user's desire. Extra U1s are placed at the end of the group *)
+embeddings=DeleteCases[embeddings,x_/;x[[1]]<Length[pU1s]];
 
+aux=Max[Length[#],1]&/@groupIn;
+groupInRanges=Range@@@Transpose[StartsEnds[aux]];
+
+groupMod=Join[group,ConstantArray[U1,Length[pU1s]]];
+aux=Max[Length[#],1]&/@groupMod;
+groupModRanges=Range@@@Transpose[StartsEnds[aux]];
+
+orderingOfFactorGroups=Ordering[groupIn][[InvertOrdering[Ordering[groupMod]]]]; (* such that groupIn==groupMod[[InvertOrdering[orderingOfFactorGroups]]] *)
+linesPermuted=Flatten[groupModRanges[[InvertOrdering[orderingOfFactorGroups]]]];
 Do[
-whatToDo="AddRecord";
-replacePositions={};
-Do[
-If[!(whatToDo=="ReplaceRecord"),
-aux=ProjectionMatrixEquivalenceQ[group,result[[j,1]],listOfEmbbedings[[i,1]],result[[j,2]],listOfEmbbedings[[i,2]],LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-If[aux,whatToDo="Nothing"; Break[]];
+embeddings[[i,2,1;;Length[linesPermuted]]]=embeddings[[i,2,linesPermuted]];
+,{i,Length[embeddings]}];
+(* [END] Take into account that the user might have included some U1s as input. This means that (1) embeddings with too few U1s should be removed and (2) the lines of the projection matrices should be rearanged to match the user's desire. Extra U1s are placed at the end of the group *)
+
+embeddings[[All,1]]=Join[groupIn,ConstantArray[U1,#-Length[pU1s]]]&/@embeddings[[All,1]];
+
+(* In the case of SO(8) the automorphism group can for example relate the embeddings of SO(7) 8\[Rule]8 and 8\[Rule]7+1 so this must be taken into consideration *)
+If[dim===8,
+embeddings=DeleteDuplicates[{#,SignatureOfEmbedding[{SO8},#]}&/@embeddings,#1[[2]]==#2[[2]]&][[All,1]];
 ];
-aux=ProjectionMatrixEquivalenceQ[group,listOfEmbbedings[[i,1]],result[[j,1]],listOfEmbbedings[[i,2]],result[[j,2]],LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-If[aux,whatToDo="ReplaceRecord";AppendTo[replacePositions,{j}]];
-,{j,Length[result]}];
 
-Which[
-whatToDo=="AddRecord",AppendTo[result,listOfEmbbedings[[i]]],
-whatToDo=="ReplaceRecord",result[[replacePositions[[1,1]]]]=listOfEmbbedings[[i]];result=Delete[result,replacePositions[[2;;-1]]]];
-,{i,Length[listOfEmbbedings]}];
-
-Return[result];
+Return[embeddings];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-(* the group here is actually the subgroup *)
-ConjProjectionMatrix[group_,projectionMatrix_]:=Module[{aux,result},
-aux={};
+(* ::Input::Initialization:: *)
+(* Finds all embeddings of groupIn on SP(2 dim) *)
+
+EmbeddingsOnSPN[groupIn_,dim_]:=Module[{group,pU1s,pNonU1s,aux,solutions,solutionsRaw,nonTrivialRepsOfFactorGroups,auxNonTrivialCharges,equalGroupPos,possibleReps,permutations,permutations2,solutionsFullForm,solutionsFullFormMod,repWithGroupAutomorphismVariations,signatures,variations,dimensions,possibleU1s, solutionsWithU1s,weightsGroup,invM,embeddings,weightsSubgroup,projectionMatrix,groupInRanges,groupMod,groupModRanges,orderingOfFactorGroups,linesPermuted,automorphismsNoConjugations,automorphisms,posNonPRReps,posPRPairedReps,posPRNonPairedReps,nU1s,posI,newExpr,rowsToKeep,cMatrix},
+
+
+(* [START] First: ignore U1s in group for now. They are considered at the end *)
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[groupIn];
+group=groupIn[[pNonU1s]];
+(* [END] First: ignore U1s in group for now. They are considered at the end *)
+
+If[group==={},Return[{{ConstantArray[U1,dim],IdentityMatrix[dim]}}]];
+
+(* Generate list of reps, ignoring variations due to group automorphism *)
+aux=RepsUpToDimNFactoringAutomorphisms[#,2dim]&/@group;
+
+possibleReps={#}&/@aux[[1]];
 Do[
-aux=AppendTo[aux,If[gI==U1,{Length[Flatten[aux]]+1},DeleteDuplicates[{Table[Length[Flatten[aux]]+i,{i,Length[gI]}],ConjugateIrrep[gI,Table[Length[Flatten[aux]]+i,{i,Length[gI]}]]}]]];
-,{gI,group}];
-aux=Ordering[Flatten[#]]&/@Tuples[aux];
-result=projectionMatrix[[#]]&/@aux;
-Return[result];
+possibleReps=DeleteCases[Append[##]&@@@Tuples[{possibleReps,aux[[i]]}],x_/;Times@@DimR[group[[1;;i]],x]>2dim];
+,{i,2,Length[group]}];
+(* possibleReps=Tuples[aux]; *)
+
+possibleReps=If[TypeOfRepresentation[group,#]==="PR",{#,Times@@DimR[group,#],"PR"},{#,2Times@@DimR[group,#],"Not-PR"}]&/@possibleReps;
+possibleReps=DeleteCases[possibleReps,x_/;x[[2]]>2dim];
+If[Length[possibleReps]===0,Return[{}]];
+
+solutionsRaw=FrobeniusSolve[possibleReps[[All,2]],2dim];
+
+nonTrivialRepsOfFactorGroups=Table[Flatten[Position[possibleReps[[All,1,i]],x_/;x!=0x,{1}]],{i,Length[group]}];
+auxNonTrivialCharges=Times@@@Transpose[Map[Total,solutionsRaw[[All,#]]&/@nonTrivialRepsOfFactorGroups,{2}]];
+
+solutions=solutionsRaw[[Flatten[Position[auxNonTrivialCharges,Except[0],Heads->False]]]];
+If[Length[solutions]===0,Return[{}]];
+
+(* At this stage 'solutions' contains the valid solutions, but now it is necessary to factor out permutations of equal factor groups *)
+
+aux=DeleteDuplicates[group];
+equalGroupPos=Flatten[Position[group,#]]&/@aux;
+
+aux=Flatten/@Tuples[Permutations[#]&/@equalGroupPos];
+permutations=#[[InvertOrdering[aux[[1]]]]]&/@aux;
+
+aux=possibleReps[[All,1,#]]&/@permutations;
+permutations2=Table[Flatten[Position[el,#]&/@aux[[1]]],{el,aux}];
+
+(* permutations2 now contains the possible ordering of all allowed reps, for each automorphism transformation *)
+
+solutions=DeleteDuplicates[Table[Sort[el[[#]]&/@permutations2][[1]],{el,solutions}]];
+solutionsFullForm=Flatten[#,1]&/@Map[ConstantArray[#[[1]],#[[2]]]&,DeleteCases[Transpose[{possibleReps,#}],x_/;x[[2]]==0]&/@solutions,{2}];
+(* solutions/solutionsFullForm now have been reduced by considering previous solutions which only differed by reordering of equal factor subgroups *)
+
+(* consider variations due to the automorphism group acting on each irreducible rep, and which cannot be factored out *)
+
+automorphismsNoConjugations=Reap[Do[
+automorphisms=AutomorphismGroupTransformation[grp];
+automorphisms=DeleteDuplicates[automorphisms,ConjugateIrrep[grp,#1]===#2&];
+Sow[automorphisms];
+,{grp,group}]][[2,1]];
+
+solutionsFullFormMod=Reap[Do[
+
+repWithGroupAutomorphismVariations=Tuples[Tuples/@Table[DeleteDuplicates[irrep[[grpI,#]]&/@automorphismsNoConjugations[[grpI]]],{irrep,reducibleRep[[All,1]]},{grpI,Length[group]}]];
+
+
+(* repWithGroupAutomorphismVariations=Map[Sort,repWithGroupAutomorphismVariations,{3}]; *)
+signatures=SignatureOfRep[group,#]&/@repWithGroupAutomorphismVariations;
+variations=DeleteDuplicates[MapThread[List,{repWithGroupAutomorphismVariations,signatures}],#1[[2]]==#2[[2]]&][[All,1]];
+
+Sow[variations];
+,{reducibleRep,solutionsFullForm}]][[2,1]];
+
+
+(* At this point solutionsFullFormMod contains a list of possible decompositions of the fundamental rep of SO(n), where in the case of non-real ones they are shown only once (it is implicitly assumed that its conjugate is also present)
+*)
+(* XXXXXXXXXXXXXXXXXXXXXX Add the possible hypercharges (number of allowed U1s is variable) XXXXXXXXXXXXXXXXXXXXXX *)
+
+solutionsFullFormMod=Flatten[solutionsFullFormMod,1];
+
+solutionsWithU1s=Reap[Do[
+
+posNonPRReps=Flatten[Position[expr,x_/;TypeOfRepresentation[group,x]=!="PR",{1},Heads->False]];
+
+aux=DeleteDuplicates[expr];
+aux=Cases[aux,x_/;TypeOfRepresentation[group,x]==="PR",{1},Heads->False];
+posPRPairedReps=Flatten[Partition[Flatten[Position[expr,#]],2]&/@aux,1];
+
+posPRNonPairedReps=Complement[Range[Length[expr]],posNonPRReps,Flatten[posPRPairedReps]];
+
+nU1s=Length[posNonPRReps]+Length[posPRPairedReps];
+newExpr=expr;
+
+Do[
+posI=posNonPRReps[[i]];
+
+newExpr[[posI]]=({Join[#,UnitVector[nU1s,i]],Join[ConjugateIrrep[group,#],-UnitVector[nU1s,i]]}&@newExpr[[posI]]);
+
+(* newExpr[[All,posI]]=(Join[#,UnitVector[nU1s,i]]&/@newExpr[[All,posI]]); *)
+,{i,Length[posNonPRReps]}];
+
+Do[
+posI=posPRPairedReps[[i-Length[posNonPRReps]]];
+newExpr[[posI[[1]]]]=({Join[#,UnitVector[nU1s,i]],Join[#,-UnitVector[nU1s,i]]}&@newExpr[[posI[[1]]]]);
+newExpr[[posI[[2]]]]={};
+,{i,Length[posNonPRReps]+1,nU1s}];
+
+newExpr[[posPRNonPairedReps]]=Map[{Join[#,ConstantArray[0,nU1s]]}&,newExpr[[posPRNonPairedReps]],{1}];
+
+Sow[newExpr];
+,{expr,solutionsFullFormMod}]][[2,1]];
+
+solutionsWithU1s=Flatten[#,1]&/@solutionsWithU1s;
+
+(* XXXXXXXXXXXXXXXXXXXXXX Now obtain the projection matrices XXXXXXXXXXXXXXXXXXXXXX *)
+(*
+weightsGroup=Weights[CartanMatrix["SU",dim],UnitVector[dim-1,1]][[All,1]];
+invM=PseudoInverse[Transpose[weightsGroup]];
+*)
+invM=PseudoInverseSPN[2dim];
+
+embeddings=Reap[Do[
+(* For SP(2n) the weights of the fundamental are w_1,w_2,...,w_n/2,-w_n/2,...,-w_2,-w_1. To extract the projection matrix, match only the subgroup weights associated to w1,w2,.... Ie exclude the -w_i. *)
+weightsSubgroup=Flatten/@Flatten[ConstantArray[#[[1]],#[[2]]]&/@Flatten[WeightsGeneral[group,#]&/@el,1],1];
+weightsSubgroup=Cases[weightsSubgroup,x_/;SignOfWeight[x]===1];
+weightsSubgroup=Join[weightsSubgroup,ConstantArray[0,{dim-Length[weightsSubgroup],Length[weightsSubgroup[[1]]]}]];
+
+projectionMatrix=Transpose[weightsSubgroup].invM;
+
+Sow[{Length[el[[1]]]-Length[group],projectionMatrix}];
+,{el,solutionsWithU1s}]][[2,1]];
+
+
+
+(* [START] Take into account that the user might have included some U1s as input. This means that (1) embeddings with too few U1s should be removed and (2) the lines of the projection matrices should be rearanged to match the user's desire. Extra U1s are placed at the end of the group *)
+embeddings=DeleteCases[embeddings,x_/;x[[1]]<Length[pU1s]];
+
+aux=Max[Length[#],1]&/@groupIn;
+groupInRanges=Range@@@Transpose[StartsEnds[aux]];
+
+groupMod=Join[group,ConstantArray[U1,Length[pU1s]]];
+aux=Max[Length[#],1]&/@groupMod;
+groupModRanges=Range@@@Transpose[StartsEnds[aux]];
+
+orderingOfFactorGroups=Ordering[groupIn][[InvertOrdering[Ordering[groupMod]]]]; (* such that groupIn==groupMod[[InvertOrdering[orderingOfFactorGroups]]] *)
+linesPermuted=Flatten[groupModRanges[[InvertOrdering[orderingOfFactorGroups]]]];
+Do[
+embeddings[[i,2,1;;Length[linesPermuted]]]=embeddings[[i,2,linesPermuted]];
+,{i,Length[embeddings]}];
+(* [END] Take into account that the user might have included some U1s as input. This means that (1) embeddings with too few U1s should be removed and (2) the lines of the projection matrices should be rearanged to match the user's desire. Extra U1s are placed at the end of the group *)
+
+embeddings[[All,1]]=Join[groupIn,ConstantArray[U1,#-Length[pU1s]]]&/@embeddings[[All,1]];
+
+Return[embeddings];
 ]
 
-(* group is the group which is broken dowm [unlike ConjProjectionMatrix]*)
-ConjProjectionMatrix2[group_,projectionMatrix_]:=Module[{aux,result},
-aux={};
-Do[
-aux=AppendTo[aux,If[gI==U1,{Length[Flatten[aux]]+1},ConjugateIrrep[gI,Table[Length[Flatten[aux]]+i,{i,Length[gI]}]]]];
-,{gI,group}];
 
-aux=Ordering[Flatten[aux]];
-result=projectionMatrix[[All,aux]];
-Return[result];
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-(* This function looks for equal, non-abelian factor groups and takes only the diagonal part. As for the projection *)
-(* This function assumes that group names are 'reduced': no SP4 (=SO5 in different order) and no SO6 (=SU4 in different order) *)
-
-Options[FuseTwoEqualFactorGroups]={MinimalSubgroupFactorSize->1};
-FuseTwoEqualFactorGroups[{groupIn_,projectionMatrixIn_},OptionsPattern[]]:=Module[{group,projectionMatrix,aux,aux2,startP,endP,indicesOfRootsOfFactorGroups,result,newGroup,newProjectionMatrix},
-
-(* >>>> [START] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
-group=groupIn;
-projectionMatrix=projectionMatrixIn;
-
-aux2=Max[1,Length[#]]&/@group;
-startP=Accumulate[aux2]-aux2+1;
-endP=startP+aux2-1;
-indicesOfRootsOfFactorGroups=Range@@@Transpose[{startP,endP}];
-
-aux=Flatten[Position[group,SP4]];
-projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]]=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux,{2,1}]]]]];
-aux=Flatten[Position[group,SO6]];
-projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]]=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux,{2,1,3}]]]]];
-group=group/.{SP4->SO5,SO6->SU4};
-(* >>>> [END] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
+(* ::Input::Initialization:: *)
+(* This is the same as PseudoInverse[Transpose[weightsGroup]] with weightsGroup=Weights[CartanMatrix["SU",dim],UnitVector[dim-1,1]][[All,1]] *)
+PseudoInverseSUN[n_]:=1/n Table[Join[Table[-i,{i,r-1}],Reverse[Range[n-r]]],{r,n}]
 
 
+(* ::Input::Initialization:: *)
+PseudoInverseSON[dim_]:=Module[{n,result},
+n=Floor[dim/2];
+result=LowerTriangularize[ConstantArray[1,{n,n}]];
 
-aux=Table[{group[[i]],i},{i,Length[group]}];
-aux=DeleteCases[aux,x_/;Length[x[[1]]]<OptionValue[MinimalSubgroupFactorSize],{1}];
-aux=Gather[aux,#1[[1]]==#2[[1]]&];
-
-If[Max[Length/@aux]>1,
-aux=Flatten[Subsets[#,{2}]&/@aux,1];
-aux={#[[1,1]],#[[All,2]]}&/@aux;
-
-aux2=Max[1,Length[#]]&/@group;
-startP=Accumulate[aux2]-aux2+1;
-endP=startP+aux2-1;
-indicesOfRootsOfFactorGroups=Range@@@Transpose[{startP,endP}];
-
-aux={#[[1]],#[[2]],indicesOfRootsOfFactorGroups[[#[[2]]]]}&/@aux;
-
-(* Make sure that for each pair {g1,g2} of equal groups, that all symmetries of the Dynkin diagram of g2 are considered. *)
-aux={#[[1]],#[[2]],{#[[3,1]],Which[#[[1]]==E6,{#[[3,2]],#[[3,2,{5,4,3,2,1,6}]]},CMtoFamilyAndSeries[#[[1]]][[1]]=="A"&&CMtoFamilyAndSeries[#[[1]]][[2]]>1,{#[[3,2]],Reverse[#[[3,2]]]},#[[1]]==SO8,{#[[3,2]],#[[3,2,{1,2,4,3}]],#[[3,2,{3,2,1,4}]],#[[3,2,{3,2,4,1}]],#[[3,2,{4,2,1,3}]],#[[3,2,{4,2,3,1}]]},CMtoFamilyAndSeries[#[[1]]][[1]]=="D",{#[[3,2]],Join[#[[3,2,1;;-3]],#[[3,2,{-1,-2}]]]},True,{#[[3,2]]}]}}&/@aux;
-
-result={};
-Do[
-newGroup=Drop[group,{el[[2,2]]}];
-Do[
-newProjectionMatrix=projectionMatrix;
-newProjectionMatrix[[el[[3,1]]]]=newProjectionMatrix[[el[[3,1]]]]+newProjectionMatrix[[el2]];
-newProjectionMatrix=Drop[newProjectionMatrix,{Min[el2],Max[el2]}];
-AppendTo[result,{newGroup,newProjectionMatrix}];
-,{el2,el[[3,2]]}];
-,{el,aux}];
-Return[result];
-
+If[Mod[dim,2]==0,
+result[[-2]]=ConstantArray[1/2,n];
+result[[-1]]=ConstantArray[1/2,n];
+result[[-1,-1]]=-1/2;
 ,
-Return[{}]; (* No repeated subgroups *)
+result[[-1]]=ConstantArray[1/2,n];
+];
+result=Transpose[result];
+Return[result];
 ]
 
 
+(* ::Input::Initialization:: *)
+PseudoInverseSPN[dim_]:=Transpose[LowerTriangularize[ConstantArray[1,{dim/2,dim/2}]]]
+
+
+(* ::Input::Initialization:: *)
+(* Important function for EmbeddingsOnSON, when n is a multiple of 4. It relates the weights of the spinor representation in the Cartan basis and in the 'binary basis' *)
+SpinorChangeBasisMat[n_]:=Module[{r,result},
+r=Floor[n/2];
+
+result=ConstantArray[0,{r,r}];
+Do[
+result[[i,i]]=1;
+result[[i,i+1]]=-1;
+,{i,r-2}];
+
+result[[r-1,r-1]]=1;
+result[[r-1,r]]=1;
+result[[r,r-1]]=1;
+result[[r,r]]=-1;
+
+Return[result];
+];
+
+
+(* ::Input::Initialization:: *)
+EmbeddingsOnSimpleClassicGroup[group_,subgroup_]:=Module[{family,series,result,abelianRows,denominators,projectionMatrix},
+{family,series}=CMtoFamilyAndSeries[group];
+result=Which[family=="A",EmbeddingsOnSUN[subgroup,series+1],family=="C",EmbeddingsOnSPN[subgroup,series],family=="B",EmbeddingsOnSON[subgroup,1+2series],family=="D",EmbeddingsOnSON[subgroup,2series]];
+
+
+(* Projection matrices may have factional coefficients in lines associated to U(1)'s. In those case one can multiply those lines by some integer to remove the denominators. *)
+If[Length[result]>0,
+result=Reap[Do[
+abelianRows=AbelianAndNonAbelianRows[emb[[1]]][[1]];
+denominators=LCM@@@Denominator[emb[[2,abelianRows]]];
+
+projectionMatrix=emb[[2]];
+projectionMatrix[[abelianRows]]=denominators projectionMatrix[[abelianRows]];
+Sow[{emb[[1]],projectionMatrix}];
+
+,{emb,result}]][[2,1]];
+];
+Return[result];
 ]
 
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+(* ::Input::Initialization:: *)
+(* EmbeddingsOnSimpleClassicGroup but expanded to include variations due to: (1) automorphisms of the group, (2) automorphisms of each simple factor subgroup and (3) permutations of equal factor subgroups *)
+(* No attempt is made to cut repetitions. *)
+(* U1s are assumed to come at the end of 'subgroup' *)
+EmbeddingsOnSimpleClassicGroupExpanded[simpleGroup_,subgroup_]:=Module[{baseEmbeddigns,automorphisms,embeddings,result,aux,startS,endS,nU1s,nonAbelianSubgroupPart,sameSubgroupFactors,newEmbeddings,permutations,factorGroupRows,rowPermutations,subGs,prjsMats},
+baseEmbeddigns=EmbeddingsOnSimpleClassicGroup[simpleGroup,subgroup];
+If[baseEmbeddigns==={},Return[{}]];
+
+If[subgroup==ConstantArray[U1,Length[subgroup]],Return[baseEmbeddigns]];
+(* ------------------------------------------------------------------------------- *)
+(* --------------------------- Automorphisms of the group --------------------------- *)
+(* ------------------------------------------------------------------------------- *)
+
+automorphisms=AutomorphismGroupTransformation[simpleGroup];
+embeddings=Table[{emb[[1]],emb[[2,All,#]]}&/@automorphisms,{emb,baseEmbeddigns}];
+embeddings=Flatten[embeddings,1];
+
+(* ------------------------------------------------------------------------------- *)
+(* ------------------------- Automorphisms of the subgroup -------------------------- *)
+(* ------------------------------------------------------------------------------- *)
+
+nU1s=Count[subgroup,U1];
+nonAbelianSubgroupPart=subgroup[[1;;-1-nU1s]];
+
+aux=Max[1,Length[#]]&/@subgroup;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
+
+automorphisms=AutomorphismGroupTransformation/@subgroup;
+
+embeddings=Reap[Do[
+aux=Reap[Do[
+
+Sow[emb[[2,startS[[subgroupI]];;endS[[subgroupI]]]][[#]]&/@automorphisms[[subgroupI]]];
+
+,{subgroupI,Length[subgroup]}]][[2,1]];
+
+(* Do not forget the U1 lines *)
+aux=Append[aux,{emb[[2,Total[Length/@nonAbelianSubgroupPart]+1;;-1]]}];
+
+aux=Join@@@Tuples[aux];
+newEmbeddings={emb[[1]],#}&/@aux;
+Sow[newEmbeddings];
+,{emb,embeddings}]][[2,1]];
+embeddings=Flatten[embeddings,1];
+
+(* ------------------------------------------------------------------------------- *)
+(* --------------------- Permutations of equal factor subgroups ---------------------- *)
+(* ------------------------------------------------------------------------------- *)
+
+sameSubgroupFactors={#[[1,1]],#[[All,2]]}&/@GatherBy[Transpose[{nonAbelianSubgroupPart,Range[Length[nonAbelianSubgroupPart]]}],#[[1]]&];
+aux=Flatten/@Tuples[Permutations/@sameSubgroupFactors[[All,2]]];
+permutations=#[[aux[[1]]]]&/@aux;
+
+factorGroupRows=Table[Range[startS[[i]],endS[[i]]],{i,Length[nonAbelianSubgroupPart]}];
+rowPermutations=Flatten[factorGroupRows[[#]]]&/@permutations;
+
+subGs=embeddings[[All,1]];
+
+prjsMats=embeddings[[All,2]];
+prjsMats=Transpose[ConstantArray[prjsMats,Length[rowPermutations]]];
 
 
-(* Load some pre-computed valued of MaximalSubgroups[<group>,RplusS\[Rule]True,OnlyMaximalSubgroups\[Rule]True,ConsiderSO8Symmetries\[Rule]True] *)
+Do[
+prjsMats[[All,i,rowPermutations[[1]]]]=prjsMats[[All,i,rowPermutations[[i]]]];
+,{i,Length[rowPermutations]}];
 
-Get[FileNameJoin[{$GroupMathDirectory,"pre_computed_data"}]];
-listOfMaximalSubgroupsPreComputed=Uncompress[listOfMaximalSubgroupsPreComputedC];
-Do[MaximalSubgroups[grpEl[[1]],RplusS->True,OnlyMaximalSubgroups->True,ConsiderSO8Symmetries->True]=grpEl[[2]];,{grpEl,listOfMaximalSubgroupsPreComputed}];
-ClearAll[listOfMaximalSubgroupsPreComputed,listOfMaximalSubgroupsPreComputedC];
+result=Flatten[Table[DistributeElementOverList[subGs[[i]],prjsMats[[i]]],{i,Length[subGs]}],1];
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+IsClassicalGroupQ[group_]:=Module[{aux,result},
+aux=CMtoFamilyAndSeries/@group;
+result=!(MemberQ[aux,"E",-1]||MemberQ[aux,"F",-1]||MemberQ[aux,"G",-1]);
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+EmbeddingsOnSimpleGroup[simpleGroup_,targetSubgroup_]:=EmbeddingsOnSimpleGroup[simpleGroup,targetSubgroup]=Module[{maximalSubgroups,expandedMaximalEmbeddings,subEmbs,aux,result,ordering,pU1,pNonU1s,nU1sToAdd,targetSubgroupMod,auxO},
+
+(* If rank of rank of targetSubgroup is larger than the one of simpleGroup ... there is no embedding *)
+If[GroupRank[targetSubgroup]>GroupRank[simpleGroup],Return[{}]];
+
+(* If {simpleGroup}==targetSubgroup ... no need for further calculations *)
+If[{simpleGroup}==targetSubgroup,Return[{{targetSubgroup,IdentityMatrix[Length[simpleGroup]]}}]];
+
+(* If targetSubgroup is just a collection of U(1)'s, then there is also no need for further calculations *)
+If[targetSubgroup===ConstantArray[U1,Length[targetSubgroup]]&&Length[targetSubgroup]<=Length[simpleGroup],Return[{{ConstantArray[U1,Length[simpleGroup]],IdentityMatrix[Length[simpleGroup]]}}]];
+
+(* [1] Help the memoization process by sorting the factors in targetSubgroup *)
+If[!OrderedQ[targetSubgroup],
+ordering=ReshuffleGroupFactorsRows[targetSubgroup,Sort[targetSubgroup]];
+
+result=EmbeddingsOnSimpleGroup[simpleGroup,Sort[targetSubgroup]];
+
+result[[All,1,Sort[ordering[[1]]]]]=result[[All,1,InvertOrdering[ordering[[1]]]]];
+result[[All,2,Sort[ordering[[2]]]]]=result[[All,2,InvertOrdering[ordering[[2]]]]];
+Return[result];
+];
+
+(* [2] Help the memoization process: If there are U(1)'s, run EmbeddingsOnSimpleGroup with none [this will provide all embeddings with or without U(1)'s] and then cut those embeddings which do not have enought U(1)'s. Not forgetting to placing the factors groups in the correct order *)
+If[MemberQ[targetSubgroup,U1],
+{pU1,pNonU1s}=PositionU1sAndNonU1s[targetSubgroup];
+targetSubgroupMod=targetSubgroup[[pNonU1s]];
+
+result=EmbeddingsOnSimpleGroup[simpleGroup,targetSubgroupMod];
+result=Cases[result,x_/;Length[x[[1]]]>=Length[targetSubgroup]];
+
+(* Reorder the subgroup factors as needed, and the rows of the projection matrices *)
+nU1sToAdd=Length[pU1];
+{ordering,auxO}=ReshuffleGroupFactorsRows[Join[targetSubgroupMod,ConstantArray[U1,nU1sToAdd]],targetSubgroup];
+result[[All,2,Sort[auxO]]]=result[[All,2,auxO]];
+result[[All,1,Sort[ordering]]]=result[[All,1,ordering]];
+
+Return[result];
+];
+
+(* If simpleGroup is a classical group, use EmbeddingsOnSimpleClassicGroup *)
+If[IsClassicalGroupQ[{simpleGroup}],Return[EmbeddingsOnSimpleClassicGroup[simpleGroup,targetSubgroup]]];
+
+(* --------------------------------------------------------------------------------------------------------- *)
+(* --------------------------------------------------------------------------------------------------------- *)
+(* ----------------------------------- Real work of this function starts now ---------------------------------- *)
+(* --------------------------------------------------------------------------------------------------------- *)
+(* --------------------------------------------------------------------------------------------------------- *)
+
+maximalSubgroups=MaximalSubgroups[simpleGroup,OnlyMaximalSubgroups->False];
+
+(* Expand the 'maximalSubgroups' using (1) automorphisms of the group, (2) automorphisms of each simple factor subgroup and (3) permutations of equal factor subgroups. Although (1) would not be necessary [but it is included in ExpandOneEmbedding] *)
+
+expandedMaximalEmbeddings=Flatten[ExpandOneEmbedding[simpleGroup,#,Expansions->{2,3}]&/@maximalSubgroups,1];
+
+(* Use Embeddings to decompose further each maximal embedding to targetSubgroup. Chain the projection matrices *)
+aux=Table[
+subEmbs=Embeddings[emb[[1]],targetSubgroup];
+{#[[1]],#[[2]].emb[[2]]}&/@subEmbs
+,{emb,expandedMaximalEmbeddings}];
+aux=Flatten[aux,1];
+
+(* Delete repetitions *)
+result=DeleteDuplicates[{#,SignatureOfEmbedding[{simpleGroup},#]}&/@aux,#1[[2]]==#2[[2]]&][[All,1]];
+
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+EmbeddingsOnSimpleGroupExpanded[simpleGroup_,subgroup_]:=Module[{baseEmbeddigns,automorphisms,embeddings,result,aux,startS,endS,nU1s,nonAbelianSubgroupPart,sameSubgroupFactors,newEmbeddings,permutations,factorGroupRows,rowPermutations,subGs,prjsMats},
+baseEmbeddigns=EmbeddingsOnSimpleGroup[simpleGroup,subgroup];
+If[baseEmbeddigns==={},Return[{}]];
+
+If[subgroup==ConstantArray[U1,Length[subgroup]],Return[baseEmbeddigns]];
+(* ------------------------------------------------------------------------------- *)
+(* --------------------------- Automorphisms of the group --------------------------- *)
+(* ------------------------------------------------------------------------------- *)
+
+automorphisms=AutomorphismGroupTransformation[simpleGroup];
+embeddings=Table[{emb[[1]],emb[[2,All,#]]}&/@automorphisms,{emb,baseEmbeddigns}];
+embeddings=Flatten[embeddings,1];
+
+(* ------------------------------------------------------------------------------- *)
+(* ------------------------- Automorphisms of the subgroup -------------------------- *)
+(* ------------------------------------------------------------------------------- *)
+
+nU1s=Count[subgroup,U1];
+nonAbelianSubgroupPart=subgroup[[1;;-1-nU1s]];
+
+aux=Max[1,Length[#]]&/@subgroup;
+startS=Accumulate[aux]-aux+1;
+endS=startS+aux-1;
+
+automorphisms=AutomorphismGroupTransformation/@subgroup;
+
+embeddings=Reap[Do[
+aux=Reap[Do[
+
+Sow[emb[[2,startS[[subgroupI]];;endS[[subgroupI]]]][[#]]&/@automorphisms[[subgroupI]]];
+
+,{subgroupI,Length[subgroup]}]][[2,1]];
+
+(* Do not forget the U1 lines *)
+aux=Append[aux,{emb[[2,Total[Length/@nonAbelianSubgroupPart]+1;;-1]]}];
+
+aux=Join@@@Tuples[aux];
+newEmbeddings={emb[[1]],#}&/@aux;
+Sow[newEmbeddings];
+,{emb,embeddings}]][[2,1]];
+embeddings=Flatten[embeddings,1];
+
+(* ------------------------------------------------------------------------------- *)
+(* --------------------- Permutations of equal factor subgroups ---------------------- *)
+(* ------------------------------------------------------------------------------- *)
+
+sameSubgroupFactors={#[[1,1]],#[[All,2]]}&/@GatherBy[Transpose[{nonAbelianSubgroupPart,Range[Length[nonAbelianSubgroupPart]]}],#[[1]]&];
+aux=Flatten/@Tuples[Permutations/@sameSubgroupFactors[[All,2]]];
+permutations=#[[aux[[1]]]]&/@aux;
+
+factorGroupRows=Table[Range[startS[[i]],endS[[i]]],{i,Length[nonAbelianSubgroupPart]}];
+rowPermutations=Flatten[factorGroupRows[[#]]]&/@permutations;
+
+subGs=embeddings[[All,1]];
+
+prjsMats=embeddings[[All,2]];
+prjsMats=Transpose[ConstantArray[prjsMats,Length[rowPermutations]]];
+
+
+Do[
+prjsMats[[All,i,rowPermutations[[1]]]]=prjsMats[[All,i,rowPermutations[[i]]]];
+,{i,Length[rowPermutations]}];
+
+result=Flatten[Table[DistributeElementOverList[subGs[[i]],prjsMats[[i]]],{i,Length[subGs]}],1];
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+Embeddings[group_,subgroup_]:=Module[{pU1sGroup,pNonU1sGroup,pU1sSubgroup,pNonU1sSubgroup,grpNoU1s,subgroupNoU1s,subsets,subsetsLess,embeddings,aux,aux2,dataGiHj,newEmbeddings,ordering,auxO,nU1sToAdd},
+
+If[IsSimpleGroupQ[group],Return[Embeddings[{group},subgroup]]];
+If[IsSimpleGroupQ[subgroup],Return[Embeddings[group,{subgroup}]]];
+
+(* ----------------------------------------------------------------------------------------------------------------------- *)
+(* ------- Each of the simple subgroup factor groups Hi can be in any of the group factor groups Gi. Find the possibilities -------- *)
+(* ----------------------------------------------------------------------------------------------------------------------- *)
+
+(* Print["Embeddings [0] >>> ",CMtoName[group],"   ",CMtoName[subgroup]]; *)
+(* Ignore U1s *)
+{pU1sGroup,pNonU1sGroup}=PositionU1sAndNonU1s[group];
+grpNoU1s=group[[pNonU1sGroup]];
+
+{pU1sSubgroup,pNonU1sSubgroup}=PositionU1sAndNonU1s[subgroup];
+subgroupNoU1s=subgroup[[pNonU1sSubgroup]];
+
+If[subgroupNoU1s==={},
+
+aux=Total[Max[1,Length[#]]&/@group];
+aux2=Total[Max[1,Length[#]]&/@subgroup];
+
+If[aux2>aux,Return[{}]];
+Return[{{ConstantArray[U1,aux],IdentityMatrix[aux]}}];
+];
+
+(* Subsets *)
+subsets=DeleteDuplicates[Subsets[MapThread[List,{Range[Length[subgroupNoU1s]],subgroupNoU1s}]]];
+subsetsLess=DeleteDuplicates[subsets,(#1[[All,2]]==#2[[All,2]])&];
+
+(* ----------------------------------------------------------------------------------------------------------------------- *)
+(* --------------- Find the embeddings in each case, factoring out Gi and Hi permutations, and automorphisms of the Hi ------------ *)
+(* ----------------------------------------------------------------------------------------------------------------------- *)
+
+(* Print["Embeddings [0.1]"]; *)
+embeddings=Table[
+If[grI===1,
+{#[[All,1]],EmbeddingsOnSimpleGroup[grpNoU1s[[grI]],#[[All,2]]]}&/@subsetsLess,
+{#[[All,1]],EmbeddingsOnSimpleGroupExpanded[grpNoU1s[[grI]],#[[All,2]]]}&/@subsets
+],
+{grI,Length[grpNoU1s]}];
+
+embeddings=Map[DeleteCases[#,x_/;x[[2]]==={}]&,embeddings,{1}];
+(* Print["Embeddings [1] >>> ",Length/@embeddings]; *)
+embeddings=Tuples[embeddings];
+embeddings=DeleteCases[embeddings,x_/;Length[DeleteDuplicates[Flatten[x[[All,1]]]]]<Length[subgroupNoU1s]];
+
+dataGiHj=embeddings[[All,All,1]];
+embeddings=embeddings[[All,All,2]];
+
+If[embeddings==={},Return[{}]];
+
+embeddings=Reap[Do[
+aux=Transpose/@Tuples[embeddings[[i]]];
+newEmbeddings=StitchTogetherProjectionMatrices[grpNoU1s,#[[1]],#[[2]],dataGiHj[[i]]]&/@aux;
+Sow[newEmbeddings];
+,{i,Length[embeddings]}]][[2,1]];
+embeddings=Flatten[embeddings,1];
+
+embeddings=DeleteDuplicates[embeddings];
+(* Print["Embeddings [2] >>> ",Length[embeddings]]; *)
+embeddings=DeleteDuplicates[{#,SignatureOfEmbedding[grpNoU1s,#]}&/@embeddings,#1[[2]]==#2[[2]]&][[All,1]];
+(* Print["Embeddings [3] >>> ",Length[embeddings]]; *)
+(* ----------------------------------------------------------------------------------------------------------------------- *)
+(* ------------------------------------------ Fix the position and number of U(1)'s ----------------------------------------- *)
+(* ----------------------------------------------------------------------------------------------------------------------- *)
+
+(* Delete cases which do not have enough U(1)'s *)
+embeddings=Cases[embeddings,x_/;Count[x[[1]],U1]>=Length[pU1sSubgroup]-Length[pU1sGroup]];
+
+(* Put back the U(1)'s of group which were removed at the very beginning of this function *)
+nU1sToAdd=Length[pU1sGroup];
+
+If[nU1sToAdd>0,
+embeddings[[All,1]]=Join[#,ConstantArray[U1,nU1sToAdd]]&/@embeddings[[All,1]];
+embeddings[[All,2]]=BlockDiagonalMatrix[{#,IdentityMatrix[nU1sToAdd]}]&/@embeddings[[All,2]];
+];
+
+(* Reorder the U(1)'s as presented in group *)
+{ordering,auxO}=ReshuffleGroupFactorsRows[Join[grpNoU1s,ConstantArray[U1,nU1sToAdd]],group];
+embeddings[[All,2,All,Sort[auxO]]]=embeddings[[All,2,All,auxO]];
+
+(* Reorder the U(1)'s as presented in subgroup *)
+nU1sToAdd=Length[pU1sSubgroup];
+{ordering,auxO}=ReshuffleGroupFactorsRows[Join[subgroupNoU1s,ConstantArray[U1,nU1sToAdd]],subgroup];
+embeddings[[All,2,Sort[auxO]]]=embeddings[[All,2,auxO]];
+embeddings[[All,1,Sort[ordering]]]=embeddings[[All,1,ordering]];
+
+Return[embeddings];
+]
+
+
+(* ::Input::Initialization:: *)
+(* The result are two bolean values {<embedding2 is a sub-embedding of embedding1?>,<embedding1 is a sub-embedding of embedding2?>} *)
+IsSubEmbeddingQ[simpleGroup_,embedding1_,embedding2_]:=Module[{emb12,emb21,embedding1s,embedding2s,signature1,signature2,signature1P,signature2P,is2In1Q,is1In2Q,aux1,aux2,aux1P,aux2P,embs2In1,embs1In2},
+
+(* Only for SO(8) it is important to consider here the automorphisms of simpleGroup and factor them out, ie embeddings related by them are considered equivalent *)
+If[simpleGroup===SO8,
+
+is2In1Q=Or@@(IsSubEmbeddingQAUX[simpleGroup,embedding1,{embedding2[[1]],embedding2[[2,All,#]]}]&/@AutomorphismGroupTransformation[SO8]);
+is1In2Q=Or@@(IsSubEmbeddingQAUX[simpleGroup,embedding2,{embedding1[[1]],embedding1[[2,All,#]]}]&/@AutomorphismGroupTransformation[SO8]);
+,
+is2In1Q=IsSubEmbeddingQAUX[simpleGroup,embedding1,embedding2];
+is1In2Q=IsSubEmbeddingQAUX[simpleGroup,embedding2,embedding1];
+];
+
+Return[{is2In1Q,is1In2Q}];
+]
+
+(* Is embedding2 a sub-embedding of embedding1? *)
+IsSubEmbeddingQAUX[simpleGroup_,embedding1_,embedding2_]:=Module[{emb12,embedding1s,signature2,signature2P,is2In1Q,aux1,aux2,aux1P,aux2P,embs2In1,dims1,dims2,listOfDimValues,cases1,cases2},
+
+If[GroupRank[embedding2[[1]]]>GroupRank[embedding1[[1]]],Return[False]];
+
+(* [START] Quick test: Just look at the dimensions of the sub-reps under embedding1 and embedding2: those of embedding2 must fit into those of embedding1  *)
+
+dims1=(Times@@DimR[embedding1[[1]],#])&/@DecomposeDefiningReps[simpleGroup,embedding1][[1]];
+dims2=(Times@@DimR[embedding2[[1]],#])&/@DecomposeDefiningReps[simpleGroup,embedding2][[1]];
+
+listOfDimValues=Reverse[Sort[DeleteDuplicates[dims2]]];
+
+Do[
+cases1=Cases[dims1,x_/;x>=value];
+cases2=Cases[dims2,x_/;x>=value];
+is2In1Q=(Total[cases1]>=Total[cases2]);
+
+If[!is2In1Q,Return[]];
+,{value,listOfDimValues}];
+If[!is2In1Q,Return[is2In1Q]];
+
+(* [END] Quick test: Just look at the dimensions of the sub-reps under embedding1 and embedding2: those of embedding2 must fit into those of embedding1 *)
+
+emb12=Embeddings[embedding1[[1]],embedding2[[1]]];
+
+embedding1s=ExpandOneEmbedding[simpleGroup,embedding1,Expansions->{2,3}];
+embedding1s={embedding1[[1]],#[[2,1;;Length[embedding1[[2]]]]]}&/@embedding1s;
+
+embs2In1=Flatten[Table[{#[[1]],#[[2]].emb[[2]]}&/@emb12,{emb,embedding1s}],1];
+
+
+signature2P=SignaturePartialOfEmbedding[{simpleGroup},embedding2];
+aux1P=SignaturePartialOfEmbedding[{simpleGroup},#]&/@embs2In1;
+
+
+(* MemberQ[aux1P,signature2P] is a quick necessary [but insufficient] conditions for an embeddings to be a subembedding *)
+is2In1Q=MemberQ[aux1P,signature2P];
+
+If[is2In1Q,
+aux1=SignatureOfEmbedding[{simpleGroup},#]&/@embs2In1;
+signature2=SignatureOfEmbedding[{simpleGroup},embedding2];
+is2In1Q=is2In1Q&&MemberQ[aux1,signature2];
+];
+
+Return[is2In1Q];
+]
+
+
+(* ::Input::Initialization:: *)
+(* This function provides a signature which might not be unique to an embedding. However, it is faster than SignatureOfEmbedding. It is used by IsSubEmbeddingQAUX. *)
+SignaturePartialOfEmbedding[groupIn_,embedding_]:=Module[{subgroup,projectionMatrix,pU1s,pNonU1s,initialDecomposition,partialSignature,group},
+
+{subgroup,projectionMatrix}=embedding;
+
+(* remove U(1)'s from group *)
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[groupIn];
+projectionMatrix=projectionMatrix[[All,AbelianAndNonAbelianRows[groupIn][[2]]]];
+group=groupIn[[pNonU1s]];
+
+(* remove U(1)'s from subgroup - they are irrelevant assuming a maximal number of them *)
+{pU1s,pNonU1s}=PositionU1sAndNonU1s[subgroup];
+projectionMatrix=projectionMatrix[[AbelianAndNonAbelianRows[subgroup][[2]]]];
+subgroup=subgroup[[pNonU1s]];
+
+
+(* decompose the defining reps of group *)
+initialDecomposition=DecomposeDefiningRepsIgnoringU1s[group,{subgroup,projectionMatrix}];
+
+partialSignature=Map[Sort,Map[Sort,Map[Sort[DimR[subgroup,#]]&,initialDecomposition,{2}],{1}],{0}];
+
+Return[partialSignature];
+]
+
+
+(* ::Input::Initialization:: *)
+(* Function to be used by MaximalSubgroups, at the very end, to ensure that only the maximal subgroups are returned *)
+RemoveNonMaximalSubgroups[group_,potentialMaxEmbs_]:=Module[{nonMaximalSubgroupIndices,result,data},
+nonMaximalSubgroupIndices={};
+Do[
+If[!MemberQ[nonMaximalSubgroupIndices,cntI]&&!MemberQ[nonMaximalSubgroupIndices,cntJ],
+data=IsSubEmbeddingQ[group,potentialMaxEmbs[[cntI]],potentialMaxEmbs[[cntJ]]];
+If[data[[1]],AppendTo[nonMaximalSubgroupIndices,cntJ]];
+If[data[[2]]&&!data[[1]],AppendTo[nonMaximalSubgroupIndices,cntI]];
+];
+,{cntI,Length[potentialMaxEmbs]},{cntJ,cntI+1,Length[potentialMaxEmbs]}];
+
+result=potentialMaxEmbs[[Complement[Range[Length[potentialMaxEmbs]],nonMaximalSubgroupIndices]]];
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
 
 (* Function may return some groups which are not maximal, but crutially all maximal subgroups are returned. The option OnlyMaximalSubgroups\[Rule]True can be used to compute only those subgroups which are maximal *)
-(* The input group should be simple. Furthermore, embeddings which are related by subgroup symmetries or permutations are considered equal. If group = SO8, the group symmetries cannot be probed by scanning over the subgroup symmetries, so there is the question of what to do. With ConsiderSO8Symmetries\[Rule]True the embeddings which are related by SO8 symmetries are considered equal (hence factored out); otherwise with ConsiderSO8Symmetries\[Rule]False these pairs of embeddings are considered distinct *)
-Options[MaximalSubgroups]={RplusS->False,OnlyMaximalSubgroups->True,ConsiderSO8Symmetries->True};
-MaximalSubgroups[group_]:=MaximalSubgroups[group,RplusS->False,OnlyMaximalSubgroups->True,ConsiderSO8Symmetries->True];
+(* The input group should be simple. Furthermore, embeddings which are related by (1) automorphisms of the group, (2) automorphisms of each simple factor subgroup and (3) permutations of equal factor subgroups, are considered equal. *)
+
+Options[MaximalSubgroups]={RplusS->False,OnlyMaximalSubgroups->True};
+MaximalSubgroups[group_]:=MaximalSubgroups[group,RplusS->False,OnlyMaximalSubgroups->True];
 
 
-MaximalSubgroups[group_,OptionsPattern[]]:=MaximalSubgroups[group,RplusS->OptionValue[RplusS],OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups],ConsiderSO8Symmetries->OptionValue[ConsiderSO8Symmetries]]=Module[{memoizedValueToLookFor,groupFamily,n,subgroups,subgroupsR,subgroupsS,subgroup,aux,potentialSpecialSubgroups,isSubEmbeddingQ,notMaximal,keepPos,missedCasesR,missedCasesS,trulyMissedCasesR,trulyMissedCasesS,emb},
+MaximalSubgroups[group_,OptionsPattern[]]:=MaximalSubgroups[group,RplusS->OptionValue[RplusS],OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups]]=Module[{memoizedValueToLookFor,groupFamily,n,subgroups,subgroupsR,subgroupsS,subgroup,aux,potentialSpecialSubgroups,isSubEmbeddingQ,notMaximal,keepPos,missedCasesR,missedCasesS,trulyMissedCasesR,trulyMissedCasesS,emb},
 
-(* If MaximalSubgroups was already ran for this group, RplusS, ConsiderSO8Symmetries BUT with pherhaps OnlyMaximalSubgroups\[Rule]True instead of False, return the value with OnlyMaximalSubgroups\[Rule]True  because that is even better than OnlyMaximalSubgroups\[Rule]false *)
-memoizedValueToLookFor=ToExpression["HoldPattern[MaximalSubgroups["<>ToString[group]<>",RplusS\[Rule]"<>ToString[OptionValue[RplusS]]<>",OnlyMaximalSubgroups\[Rule]"<>ToString[True]<>",ConsiderSO8Symmetries\[Rule]"<>ToString[OptionValue[ConsiderSO8Symmetries]]<>"]]"];
+(* If MaximalSubgroups was already ran for this group and RplusS value BUT with pherhaps OnlyMaximalSubgroups\[Rule]True instead of False, return the value with OnlyMaximalSubgroups\[Rule]True  because that is even better than OnlyMaximalSubgroups\[Rule]false *)
+memoizedValueToLookFor=ToExpression["HoldPattern[MaximalSubgroups["<>ToString[group]<>",RplusS\[Rule]"<>ToString[OptionValue[RplusS]]<>",OnlyMaximalSubgroups\[Rule]"<>ToString[True]<>"]]"];
 
 If[MemberQ[DownValues[MaximalSubgroups],memoizedValueToLookFor,-1],
-Return[MaximalSubgroups[group,RplusS->OptionValue[RplusS],OnlyMaximalSubgroups->True,ConsiderSO8Symmetries->OptionValue[ConsiderSO8Symmetries]]];
+Return[MaximalSubgroups[group,RplusS->OptionValue[RplusS],OnlyMaximalSubgroups->True]];
 ];
 
-
-
 (* Helps with memoization of the MaximalSubgroups function *)
-If[!OptionValue[RplusS],Return[Flatten[MaximalSubgroups[group,RplusS->True,OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups],ConsiderSO8Symmetries->OptionValue[ConsiderSO8Symmetries]],1]]];
-If[(group=!=SO8)&&!OptionValue[ConsiderSO8Symmetries],Return[MaximalSubgroups[group,RplusS->True,OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups],ConsiderSO8Symmetries->True]]];
-
-(* SO(8) is a group with extra symmetry, so this result was calculated once carefully. Note that for ConsiderSO8Symmetries\[Rule]True, the code below is never executed becase this case is included in listOfMaximalSubgroupsPreComputed *)
-If[group===SO8&&!OptionValue[ConsiderSO8Symmetries],
-Return[{{{{{{2,-1,0},{-1,2,-1},{0,-1,2}},{}},{{0,0,1,0},{0,1,0,0},{0,0,0,1},{2,2,1,1}}},{{{{2,-1,0},{-1,2,-1},{0,-1,2}},{}},{{1,0,0,0},{0,1,0,0},{0,0,0,1},{1,2,2,1}}},{{{{2,-1,0},{-1,2,-1},{0,-1,2}},{}},{{1,0,0,0},{0,1,0,0},{0,0,1,0},{1,2,1,2}}},{{{{2}},{{2}},{{2}},{{2}}},{{1,0,0,0},{0,0,1,0},{0,0,0,1},{-1,-2,-1,-1}}}},{{{{{2,-1},{-1,2}}},{{1,3,1,1},{1,0,1,1}}},{{{{2,-1,0},{-1,2,-2},{0,-1,2}}},{{0,0,1,0},{0,1,0,0},{1,0,0,1}}},{{{{2,-1,0},{-1,2,-2},{0,-1,2}}},{{0,0,0,1},{0,1,0,0},{1,0,1,0}}},{{{{2,-1,0},{-1,2,-2},{0,-1,2}}},{{1,0,0,0},{0,1,0,0},{0,0,1,1}}},{{{{2,-2},{-1,2}},{{2}}},{{0,1,0,0},{1,0,0,1},{1,2,2,1}}},{{{{2,-2},{-1,2}},{{2}}},{{0,1,0,0},{1,0,1,0},{1,2,1,2}}},{{{{2,-2},{-1,2}},{{2}}},{{0,1,0,0},{0,0,1,1},{2,2,1,1}}}}}]];
-If[group===SO8&&OptionValue[ConsiderSO8Symmetries],
-Return[{{{{{{2,-1,0},{-1,2,-1},{0,-1,2}},{}},{{0,0,1,0},{0,1,0,0},{0,0,0,1},{2,2,1,1}}},{{{{2}},{{2}},{{2}},{{2}}},{{1,0,0,0},{0,0,1,0},{0,0,0,1},{-1,-2,-1,-1}}}},{{{{{2,-1},{-1,2}}},{{1,3,1,1},{1,0,1,1}}},{{{{2,-1,0},{-1,2,-2},{0,-1,2}}},{{0,0,1,0},{0,1,0,0},{1,0,0,1}}},{{{{2,-2},{-1,2}},{{2}}},{{0,1,0,0},{1,0,0,1},{1,2,2,1}}}}}]];
-
-
-
-
-
-
-
+If[!OptionValue[RplusS],Return[Flatten[MaximalSubgroups[group,RplusS->True,OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups]],1]]];
 
 
 {groupFamily,n}=CMtoFamilyAndSeries[group];
@@ -3470,7 +4804,7 @@ AppendTo[subgroupsR,{subgroup,RegularSubgroupProjectionMatrix[{group},subgroup,{
 potentialSpecialSubgroups={#}&/@PotentialSimpleSpecialSubgroupsOfClassicalGroups[group];
 
 If[!PrimeQ[n+1],
-aux=DeleteDuplicates[Sort[{CartanMatrix["A",#-1],CartanMatrix["A",(n+1)/#-1]}]&/@(FactorInteger[n+1][[All,1]])];
+aux=DeleteDuplicates[Sort[{CartanMatrix["A",#-1],CartanMatrix["A",(n+1)/#-1]}]&/@(Cases[Divisors[n+1],x_/;1<x<=Sqrt[n+1]])];
 potentialSpecialSubgroups=Join[potentialSpecialSubgroups,aux];
 ];
 aux={#,SpecialMaximalSubgroupProjectionMatrix[{group},#,IncludeTrivialVariations->False]}&/@potentialSpecialSubgroups; (* SLOW for SU30 for example *)
@@ -3513,7 +4847,7 @@ AppendTo[subgroupsR,{subgroup,RegularSubgroupProjectionMatrix[{group},subgroup,{
 potentialSpecialSubgroups={#}&/@PotentialSimpleSpecialSubgroupsOfClassicalGroups[group];
 
 If[!PrimeQ[2n+1],
-aux=DeleteDuplicates[Sort[{CartanMatrix["B",(#-1)/2],CartanMatrix["B",((2n+1)/#-1)/2]}]&/@(FactorInteger[2n+1][[All,1]])];
+aux=DeleteDuplicates[Sort[{CartanMatrix["B",(#-1)/2],CartanMatrix["B",((2n+1)/#-1)/2]}]&/@(Cases[Divisors[2n+1],x_/;1<x<=Sqrt[2n+1]])];
 potentialSpecialSubgroups=Join[potentialSpecialSubgroups,aux];
 ];
 
@@ -3555,10 +4889,10 @@ AppendTo[subgroupsR,{subgroup,RegularSubgroupProjectionMatrix[{group},subgroup,{
 potentialSpecialSubgroups={#}&/@PotentialSimpleSpecialSubgroupsOfClassicalGroups[group];
 
 If[EvenQ[n],
-aux=DeleteCases[DeleteDuplicates[Join[If[n/(2#)>=2,Sort[{CartanMatrix["C",#],CartanMatrix["D",n/(2#)]}],Null]&/@(Append[FactorInteger[n/2][[All,1]],1]),If[#>=2,Sort[{CartanMatrix["C",n/(2#)],CartanMatrix["D",#]}],Null]&/@(FactorInteger[n/2][[All,1]])]],Null];
+aux=DeleteCases[DeleteDuplicates[Join[If[n/(2#)>=2,Sort[{CartanMatrix["C",#],CartanMatrix["D",n/(2#)]}],Null]&/@(Cases[Divisors[n/2],x_/;1<=x<=Sqrt[n/2]]),If[#>=2,Sort[{CartanMatrix["C",n/(2#)],CartanMatrix["D",#]}],Null]&/@(Cases[Divisors[n/2],x_/;1<x<=Sqrt[n/2]])]],Null];
 potentialSpecialSubgroups=Join[potentialSpecialSubgroups,aux];
 ];
-aux=DeleteCases[DeleteDuplicates[Join[If[!EvenQ[#]&&#>=3,Sort[{CartanMatrix["B",(#-1)/2],CartanMatrix["C",n/#]}],Null]&/@(FactorInteger[n][[All,1]]),If[!EvenQ[n/#]&&n/#>=3,Sort[{CartanMatrix["B",(n/#-1)/2],CartanMatrix["C",#]}],Null]&/@(Append[FactorInteger[n][[All,1]],1])]],Null];
+aux=DeleteCases[DeleteDuplicates[Join[If[!EvenQ[#]&&#>=3,Sort[{CartanMatrix["B",(#-1)/2],CartanMatrix["C",n/#]}],Null]&/@(Cases[Divisors[n],x_/;1<x<=Sqrt[n]]),If[!EvenQ[n/#]&&n/#>=3,Sort[{CartanMatrix["B",(n/#-1)/2],CartanMatrix["C",#]}],Null]&/@(Cases[Divisors[n],x_/;1<=x<=Sqrt[n]])]],Null];
 potentialSpecialSubgroups=Join[potentialSpecialSubgroups,aux];
 
 aux={#,SpecialMaximalSubgroupProjectionMatrix[{group},#,IncludeTrivialVariations->False]}&/@potentialSpecialSubgroups;  (* SLOW? *)
@@ -3569,8 +4903,8 @@ subgroupsS=Flatten[Table[{#[[1]],el},{el,#[[2]]}]&/@aux,1];
 ,groupFamily==="D",
 (* REGULAR: *)
 If[n==3, (* SO6 *)
-subgroupsR={#[[1]],#[[2,All,{2,1,3}]]}&/@MaximalSubgroups[SU4,RplusS->True,OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups],ConsiderSO8Symmetries->OptionValue[ConsiderSO8Symmetries]][[1]];
-subgroupsS={#[[1]],#[[2,All,{2,1,3}]]}&/@MaximalSubgroups[SU4,RplusS->True,OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups],ConsiderSO8Symmetries->OptionValue[ConsiderSO8Symmetries]][[2]];
+subgroupsR={#[[1]],#[[2,All,{2,1,3}]]}&/@MaximalSubgroups[SU4,RplusS->True,OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups]][[1]];
+subgroupsS={#[[1]],#[[2,All,{2,1,3}]]}&/@MaximalSubgroups[SU4,RplusS->True,OnlyMaximalSubgroups->OptionValue[OnlyMaximalSubgroups]][[2]];
 ];
 
 If[n>3, (* SO8, SO10, ... *)
@@ -3608,12 +4942,12 @@ AppendTo[subgroupsR,{subgroup,RegularSubgroupProjectionMatrix[{group},subgroup,{
 potentialSpecialSubgroups={#}&/@PotentialSimpleSpecialSubgroupsOfClassicalGroups[group];
 
 If[EvenQ[n],
-aux=DeleteCases[DeleteDuplicates[If[n/(2#)>=2&&#>=2,Sort[{CartanMatrix["D",#],CartanMatrix["D",n/(2#)]}],Null]&/@(FactorInteger[n/2][[All,1]])],Null];
+aux=DeleteCases[DeleteDuplicates[If[n/(2#)>=2&&#>=2,Sort[{CartanMatrix["D",#],CartanMatrix["D",n/(2#)]}],Null]&/@(Cases[Divisors[n/2],x_/;1<x<=Sqrt[n/2]])],Null];
 potentialSpecialSubgroups=Join[potentialSpecialSubgroups,aux];
-aux=DeleteDuplicates[Sort[{CartanMatrix["C",#],CartanMatrix["C",n/(2#)]}]&/@(Append[FactorInteger[n/2][[All,1]],1])];
+aux=DeleteDuplicates[Sort[{CartanMatrix["C",#],CartanMatrix["C",n/(2#)]}]&/@(Cases[Divisors[n/2],x_/;1<=x<=Sqrt[n/2]])];
 potentialSpecialSubgroups=Join[potentialSpecialSubgroups,aux];
 ];
-aux=DeleteCases[DeleteDuplicates[Join[If[!EvenQ[#]&&#>=3&&n/#>=2,Sort[{CartanMatrix["B",(#-1)/2],CartanMatrix["D",n/#]}],Null]&/@(FactorInteger[n][[All,1]]),If[!EvenQ[n/#]&&#>=2&&n/#>=3,Sort[{CartanMatrix["B",(n/#-1)/2],CartanMatrix["D",#]}],Null]&/@(FactorInteger[n][[All,1]])]],Null];
+aux=DeleteCases[DeleteDuplicates[Join[If[!EvenQ[#]&&#>=3&&n/#>=2,Sort[{CartanMatrix["B",(#-1)/2],CartanMatrix["D",n/#]}],Null]&/@(Cases[Divisors[n],x_/;1<x<=Sqrt[n]]),If[!EvenQ[n/#]&&#>=2&&n/#>=3,Sort[{CartanMatrix["B",(n/#-1)/2],CartanMatrix["D",#]}],Null]&/@(Cases[Divisors[n],x_/;1<x<=Sqrt[n]])]],Null];
 potentialSpecialSubgroups=Join[potentialSpecialSubgroups,aux];
 Do[
 AppendTo[potentialSpecialSubgroups,{CartanMatrix["B",i],CartanMatrix["B",n-i-1]}]
@@ -3738,95 +5072,43 @@ subgroupsS=ReorderGroupFactors/@subgroupsS;
 (* If OnlyMaximalSubgroups is true, it must be checked that the list of embeddings contains only maximal embeddings *)
 If[OptionValue[OnlyMaximalSubgroups],
 
-(*R*)
-notMaximal={};
-missedCasesR={};
-Do[
-If[!MemberQ[notMaximal,i]&&!MemberQ[notMaximal,j]&&j=!=i,
+aux=RemoveNonMaximalSubgroups[group,Join[subgroupsR,subgroupsS]];
+subgroupsR=Intersection[subgroupsR,aux];
+subgroupsS=Intersection[subgroupsS,aux];
 
-isSubEmbeddingQ=IsSubEmbeddingQ[{group},subgroupsR[[i]],subgroupsR[[j]],5000];
-If[isSubEmbeddingQ==="LimitReached",isSubEmbeddingQ=False;AppendTo[missedCasesR,{group,subgroupsR[[i]],subgroupsR[[j]]}]];
-
-If[isSubEmbeddingQ,notMaximal=Sort[DeleteDuplicates[Append[notMaximal,j]]]];
-];
-,{i,Length[subgroupsR]},{j,Length[subgroupsR]}];
-
-keepPos=Complement[Range[Length[subgroupsR]],notMaximal];
-subgroupsR=subgroupsR[[keepPos]];
-
-trulyMissedCasesR=Cases[missedCasesR,x_/;MemberQ[subgroupsR,x[[3]]]];
-
-While[Length[trulyMissedCasesR]>0,
-
-emb=trulyMissedCasesR[[1,3]];
-
-isSubEmbeddingQ=IsSubEmbeddingQ[{group},trulyMissedCasesR[[1,2]],trulyMissedCasesR[[1,3]]];
-trulyMissedCasesR=Drop[trulyMissedCasesR,1];
-
-If[isSubEmbeddingQ,
-trulyMissedCasesR=DeleteCases[trulyMissedCasesR,x_/;x[[3]]===emb];
-subgroupsR=DeleteCases[subgroupsR,emb];
-];
-];
-
-(*S*)
-notMaximal={};
-missedCasesS={};
-Do[
-If[!MemberQ[notMaximal,i]&&!MemberQ[notMaximal,j]&&j=!=i,
-
-isSubEmbeddingQ=IsSubEmbeddingQ[{group},subgroupsS[[i]],subgroupsS[[j]],5000];
-If[isSubEmbeddingQ==="LimitReached",isSubEmbeddingQ=False;AppendTo[missedCasesS,{group,subgroupsS[[i]],subgroupsS[[j]]}]];
-
-If[isSubEmbeddingQ,notMaximal=Sort[DeleteDuplicates[Append[notMaximal,j]]]];
-];
-,{i,Length[subgroupsS]},{j,Length[subgroupsS]}];
-
-keepPos=Complement[Range[Length[subgroupsS]],notMaximal];
-subgroupsS=subgroupsS[[keepPos]];
-
-trulyMissedCasesS=Cases[missedCasesS,x_/;MemberQ[subgroupsS,x[[3]]]];
-
-
-While[Length[trulyMissedCasesS]>0,
-emb=trulyMissedCasesS[[1,3]];
-
-isSubEmbeddingQ=IsSubEmbeddingQ[{group},trulyMissedCasesS[[1,2]],trulyMissedCasesS[[1,3]]];
-trulyMissedCasesS=Drop[trulyMissedCasesS,1];
-If[isSubEmbeddingQ,
-trulyMissedCasesS=DeleteCases[trulyMissedCasesS,x_/;x[[3]]===emb];
-subgroupsS=DeleteCases[subgroupsS,emb];
-];
-];
 ];
 
 Return[{subgroupsR,subgroupsS}];
 ];
 
 
-(* Auxiliar function to ProjectionMatrixEquivalenceQ2 *)
-ProjectionMatrixEquivalenceQ2AUX[group_,projectionMatrix_]:=Module[{groupI,startP,endP,aux,projectionMatrixChunk,result},
-aux=Max[1,Length[#]]&/@group;
+(* ::Input::Initialization:: *)
+ReorderGroupFactors[{subgroupIn_,projectionMatrixIn_}]:=Module[{subgroup,aux,startP,endP,indicesOfRootsOfFactorGroups,projectionMatrix},
+subgroup=subgroupIn;
+projectionMatrix=projectionMatrixIn;
+aux=Max[1,Length[#]]&/@subgroup;
 startP=Accumulate[aux]-aux+1;
 endP=startP+aux-1;
+indicesOfRootsOfFactorGroups=Range@@@Transpose[{startP,endP}];
 
-result={};
-Do[
-groupI=group[[i]];
-projectionMatrixChunk=projectionMatrix[[All,startP[[i]];;endP[[i]]]];
-If[groupI===SO8,
-AppendTo[result,{projectionMatrixChunk,projectionMatrixChunk[[All,{1,2,4,3}]],projectionMatrixChunk[[All,{3,2,1,4}]],projectionMatrixChunk[[All,{3,2,4,1}]],projectionMatrixChunk[[All,{4,2,1,3}]],projectionMatrixChunk[[All,{4,2,3,1}]]}];
-,
-AppendTo[result,{projectionMatrixChunk}];
-];
-,{i,Length[group]}];
+(* >>>> [START] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
+aux=Flatten[Position[subgroup,SP4]];
+projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]]=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux,{2,1}]]]]];
+aux=Flatten[Position[subgroup,SO6]];
+projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]]=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux,{2,1,3}]]]]];
+subgroup=subgroup/.{SP4->SO5,SO6->SU4};
+(* >>>> [END] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
 
-result=Transpose/@(Join@@@Map[Transpose,Tuples[result],{2}]);
-Return[result];
+aux=Table[{subgroup[[i]],projectionMatrixIn[[indicesOfRootsOfFactorGroups[[i]]]]},{i,Length[subgroup]}];
+aux=Reverse[Ordering[aux]]; (*i.e, aux is such that subgroup[[aux]]\[Equal]<subgroup with ordered factors> *)
+subgroup=subgroup[[aux]];
+projectionMatrix=projectionMatrix[[Flatten[indicesOfRootsOfFactorGroups[[aux]]]]];
+
+Return[{subgroup,projectionMatrix}];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 PotentialSimpleSpecialSubgroupsOfClassicalGroups[group_]:=Module[{groupFamily,n,sizeOfFundamentalRep,potentialSimpleSubgroups},
 {groupFamily,n}=CMtoFamilyAndSeries[group];
 sizeOfFundamentalRep=DimR[group,UnitVector[n,1]]; (* not true for group=SU2 but that case is irrelevant *)
@@ -3860,239 +5142,23 @@ If[sizeOfFundamentalRep>=248,AppendTo[potentialSimpleSubgroups,E8]];
 Return[potentialSimpleSubgroups];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
-(* NOTE: This function may fail to identify two embbeding that are equivalent provided that the order of equal non-abelian factors is changed. This is not taken care of. The function will order the factor groups, but will not test permutations of equal factor groups. *)
-
-(* With LooseMatch=True, if the two embeddings produce the same non-abelian decomposition, and if subgroup1In has the same or more U1s than subgroup2In, then the function will return True (match found). This option is very convenient for the function FindAllEmbeddingsAUX. Why? Because in FindAllEmbeddingsAUX we are garanteed to go throught all possible embeddings. However, some of the embedding which appear for analysis in FindAllEmbeddingsAUX might have U1's removed but we are assured that in the set of all embeddings with the same non-abelian branching rules and more U1's we will find those embeddings as subembeddings. *)
-(* With LooseMatch=False, if two decompositions are the same, then the result is True. However, even if they are different, the result can be True: this will happen if and only if decomposition 1 differs from decomposition 2 only in extra U1 charges beyond those in subgroup2. In other words, the result will be True if and only if A) the non-abelian decomposition of 1 and 2 are equal and B) the U(1)^m part of subgroup1 can be broken down to the U(1)^n part of subgroup2, with n<=m. *)
-
-(* If TreatSO2NCorrectly\[Rule]False, then the breaking of SO(2n) groups is not fully checked, in the sense that the branching rules BR1 SO(2n) \[Rule] ... and BR2 SO(2n) \[Rule] (...)* are not distinguised *)
-
-(* See "THE SEMISIMPLE SUBALGEBRASOF EXCEPTIONAL LIE ALGEBRAS", A.N.MINCHENKO, https://www.ams.org/journals/mosc/2006-67-00/S0077-1554-06-00156-7/S0077-1554-06-00156-7.pdf *)
-
-Options[ProjectionMatrixEquivalenceQ]={LooseMatch->False,TreatSO2NCorrectly->True};
-
-ProjectionMatrixEquivalenceQ[group_,subgroup1In_,subgroup2In_,projectionMatrix1In_,projectionMatrix2In_,OptionsPattern[]]:=Module[{subgroup1,subgroup2,projectionMatrix1,projectionMatrix2,startP,endP,aux,result,groupComparison,indicesOfRootsOfFactorGroups1,indicesOfRootsOfFactorGroups2},
-
-If[OptionValue[LooseMatch]&&Length[subgroup1In]<Length[subgroup2In],Return[False]];
-If[Sort[Length/@DeleteCases[subgroup1In,U1]]!=Sort[Length/@DeleteCases[subgroup2In,U1]],Return[False]];
-
-(* [START] Add U1's to make the groups match. The corresponding new lines of the projection matrix are filled with 0's such that those new U1s are effectively not there *)
-Which[Length[subgroup1In]>Length[subgroup2In],
-groupComparison=1;
-subgroup1=subgroup1In;
-subgroup2=Join[subgroup2In,ConstantArray[U1,Length[subgroup1In]-Length[subgroup2In]]] ;
-projectionMatrix1=projectionMatrix1In;
-projectionMatrix2=Join[projectionMatrix2In,ConstantArray[0projectionMatrix2In[[1]],Length[projectionMatrix1In]-Length[projectionMatrix2In]]];
-,Length[subgroup1In]<Length[subgroup2In],
-groupComparison=-1;
-subgroup1=Join[subgroup1In,ConstantArray[U1,Length[subgroup2In]-Length[subgroup1In]]] ;
-subgroup2=subgroup2In;
-projectionMatrix1=Join[projectionMatrix1In,ConstantArray[0projectionMatrix1In[[1]],Length[projectionMatrix2In]-Length[projectionMatrix1In]]];
-projectionMatrix2=projectionMatrix2In;
-(*
-aux=subgroup1;
-subgroup1=subgroup2;
-subgroup2=aux;
-
-aux=projectionMatrix1;
-projectionMatrix1=projectionMatrix2;
-projectionMatrix2=aux;
-*)
-
-,True,
-groupComparison=0;
-subgroup1=subgroup1In;
-subgroup2=subgroup2In;
-projectionMatrix1=projectionMatrix1In;
-projectionMatrix2=projectionMatrix2In;
-];
-(* [END] Add U1's to make the groups match. The corresponding new lines of the projection matrix are filled with 0's such that those new U1s are effectively not there *)
-
-(* [START] Reorder factors in subgroup2 to match those of subgroup1 *)
-aux=Max[1,Length[#]]&/@subgroup1;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-indicesOfRootsOfFactorGroups1=Range@@@Transpose[{startP,endP}];
-
-
-aux=Max[1,Length[#]]&/@subgroup2;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-indicesOfRootsOfFactorGroups2=Range@@@Transpose[{startP,endP}];
-
-(* >>>> [START] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
-aux=Flatten[Position[subgroup1,SP4]];
-projectionMatrix1[[Flatten[indicesOfRootsOfFactorGroups1[[aux]]]]]=projectionMatrix1[[Flatten[indicesOfRootsOfFactorGroups1[[aux,{2,1}]]]]];
-aux=Flatten[Position[subgroup1,SO6]];
-projectionMatrix1[[Flatten[indicesOfRootsOfFactorGroups1[[aux]]]]]=projectionMatrix1[[Flatten[indicesOfRootsOfFactorGroups1[[aux,{2,1,3}]]]]];
-subgroup1=subgroup1/.{SP4->SO5,SO6->SU4};
-
-aux=Flatten[Position[subgroup2,SP4]];
-projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux]]]]]=projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux,{2,1}]]]]];
-aux=Flatten[Position[subgroup2,SO6]];
-projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux]]]]]=projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux,{2,1,3}]]]]];
-subgroup2=subgroup2/.{SP4->SO5,SO6->SU4};
-
-(* >>>> [END] SP4\[Rule]SO5, SO6\[Rule]SU4 *)
-(* TODO: make sure that Ordering does not permute the relative position of equal factor groups [It is probably ok right now, but be sure by making an OrderingMod function]. So, for example if the subgroup is SU4xSU2xSU2, then a decomposition into 4x1x2 is not matched to one of 4x2x1 *)
-If[Sort[subgroup1]!=Sort[subgroup2],Return[False]];
-
-aux=Ordering[subgroup2][[InvertOrdering[Ordering[subgroup1]]]]; (*i.e, aux is such that subgroup2[[aux]]==subgroup1 *)
-subgroup2=subgroup2[[aux]];
-projectionMatrix2=projectionMatrix2[[Flatten[indicesOfRootsOfFactorGroups2[[aux]]]]];
-(* [END] Reorder factors in subgroup2 to match those of subgroup1 *)
-
-(* At this point, subgroup1=subgroup2 and the projection matrices have been adapted accordingly *)
-result=ProjectionMatrixEquivalenceSimplerQ[group,subgroup1,projectionMatrix1,projectionMatrix2,LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-Return[result];
-
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-Options[ProjectionMatrixEquivalenceSimplerQ]={LooseMatch->False,TreatSO2NCorrectly->True};
-ProjectionMatrixEquivalenceSimplerQ[group_,subgroup_,projectionMatrix1_,projectionMatrix2_,OptionsPattern[]]:=Module[{startP,endP,aux,result,bestOrderOfFactors},
-If[IsSimpleGroupQ[group],
-Return[ProjectionMatrixEquivalenceQ\[UnderBracket]Aux[group,subgroup,projectionMatrix1,projectionMatrix2]];
-,
-aux=Max[1,Length[#]]&/@group;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-
-result=True;
-bestOrderOfFactors=Ordering[group,{1,-1},Length[#1]<Length[#2]&];
-Do[
-aux=ProjectionMatrixEquivalenceQ\[UnderBracket]Aux[group[[i]],subgroup,projectionMatrix1[[All,startP[[i]];;endP[[i]]]],projectionMatrix2[[All,startP[[i]];;endP[[i]]]],LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-result=result&&aux;If[!aux,Break[]];
-,{i,bestOrderOfFactors}];
-Return[result];
-];
-
-];
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-(* SO8 is a problematic group: it is not enough to decompose the rep ImportantReps[SO8][[1]]={0,0,0,1}; we must also check {1,0,0,0} and {0,0,1,0}. This is the job of ProjectionMatrixEquivalenceQ\[UnderBracket]Aux: instead of checking 3 reps, it checks the same reps with 3 different pairs of projection matrices *) 
-Options[ProjectionMatrixEquivalenceQ\[UnderBracket]Aux]={LooseMatch->False,TreatSO2NCorrectly->True};
-ProjectionMatrixEquivalenceQ\[UnderBracket]Aux[group_,subgroup_,projectionMatrix1_,projectionMatrix2_,OptionsPattern[]]:=Module[{result},
-If[group=!=SO8,
-result=ProjectionMatrixEquivalenceQ2\[UnderBracket]Aux[group,subgroup,projectionMatrix1,projectionMatrix2,LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-,
-result=And@@Table[ProjectionMatrixEquivalenceQ2\[UnderBracket]Aux[group,subgroup,projectionMatrix1[[All,perm]],projectionMatrix2[[All,perm]],LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]],{perm,{{1,2,3,4},{4,2,1,3},{1,2,4,3}}}];
-];
-Return[result];
-]
-
-
-(* Checks if two distinct projection matrices are equivalent or not. It suffices to look the decomposition of the 'fundamental' representation (all groups except SO(2n)), or for the fundamental and spinor representations for SO(2n) groups. If TreatSO2NCorrectly\[Rule]False, only the 'fundamental' of SO(2n) will be checked (conjugated embeddings will be considered equal) *)
-(* group should be a CM matrix *)
-
-Options[ProjectionMatrixEquivalenceQ2\[UnderBracket]Aux]={LooseMatch->False,TreatSO2NCorrectly->True};
-ProjectionMatrixEquivalenceQ2\[UnderBracket]Aux[group_,subgroup_,projectionMatrix1_,projectionMatrix2_,OptionsPattern[]]:=Module[{groupFamily,groupSeries,decomp1A,decomp2A,decomp1B,decomp2B,result,positionNonU1s,positionU1s,aux1,aux2,aux3,aux4,aux5,linComb},
-
-If[group===U1,If[projectionMatrix1==projectionMatrix2,Return[True],Return[False]]];
-
-{groupFamily,groupSeries}=CMtoFamilyAndSeries[group];
-result=False;
-
-decomp1A=DecomposeRep[{group},ImportantReps[{group},TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]][[1]],subgroup,projectionMatrix1];
-decomp2A=DecomposeRep[{group},ImportantReps[{group},TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]][[1]],subgroup,projectionMatrix2];
-
-positionNonU1s=Flatten[Position[subgroup,x_/;x=!=U1,{1},Heads->False]];
-positionU1s=Flatten[Position[subgroup,x_/;x==U1,{1},Heads->False]];
-
-If[Sort[decomp1A[[All,positionNonU1s]]]==Sort[decomp2A[[All,positionNonU1s]]],result=True];
-
-If[result&&!OptionValue[LooseMatch],
-(* XXXXXXXXXXXXXXXXXX [START] Procedure to handle multiple U1s XXXXXXXXXXXXXXXXXX *)
-If[Length[positionU1s]>=1,
-
-
-aux1=decomp1A[[All,positionU1s]];
-aux1=Transpose[aux1].aux1;
-aux2=decomp2A[[All,positionU1s]];
-aux2=Transpose[aux2].aux2;
-
-(* This is a necessary consition for equality of projections (not sufficient) *)
-If[!(MatrixRank[aux1]>=MatrixRank[aux2]),Return[False]];
-(*
-(* This is a necessary condition for equality of projections (not sufficient) *)
-If[!(Simplify[Sort[Eigenvalues[aux1]]==Sort[Eigenvalues[aux2]]]),Return[False]];
-*)
-
-aux1=Sort[GatherBy[decomp1A,#[[positionNonU1s]]&],OrderedQ[{#1[[1,positionNonU1s]],#2[[1,positionNonU1s]]}]&];
-aux2=Sort[GatherBy[decomp2A,#[[positionNonU1s]]&],OrderedQ[{#1[[1,positionNonU1s]],#2[[1,positionNonU1s]]}]&];
-
-aux5={};
-Do[
-aux3=aux1[[i,All,positionU1s]];
-aux4= Permutations[aux2[[i]]][[All,All,positionU1s]];
-aux4={aux3,#}&/@aux4;
-AppendTo[aux5,aux4];
-,{i,Length[aux1]}];
-
-(* aux5[[<non-abelian irrep class>,<permutation>,<1 or 2>,<irrep copy>,<Dynkin coefficient>]] *)
-result=Map[Transpose[#,{2,1,3}]&,aux5,{2}];
-(* result[[<non-abelian irrep class>,<permutation>,<irrep copy>,<1 or 2>,<Dynkin coefficient>]] *)
-result={Transpose[#[[All,1]]],Transpose[#[[All,2]]]}&/@(Flatten[#,1]&/@Tuples[result]);
-(* result[[<permutation>,<1 or 2>,<Dynkin coefficient>,<irrep copy>]] *)
-result=Or@@(MatrixRank[#[[1]]]==MatrixRank[Join[#[[1]],#[[2]]]]&/@result);
-(* XXXXXXXXXXXXXXXXXX [END] Procedure to handle multiple U1s XXXXXXXXXXXXXXXXXX *)
-];
-];
-
-Return[result];
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-(* Uses the symmetries of the Dynkin diagram of the subgroup to get the trivial variations of a given projection matrix *)
-(* Note that right now this function is not used anywhere. It can be called elsewhere, but a choice of flag means tat in practice it is never called *)
-ExpandListOfProjectionMatricesUsingCMSymmetries[subgroup_,projectionMatrix_]:=Module[{subgroupI,startP,endP,aux,projectionMatrixChunk,result},
-aux=Max[1,Length[#]]&/@subgroup;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-
-result={};
-Do[
-subgroupI=subgroup[[i]];
-projectionMatrixChunk=projectionMatrix[[startP[[i]];;endP[[i]]]];
-If[subgroupI=!=U1,
-aux=GeneralizedConjugateIrrep[subgroupI,Array[mrk,Length[subgroupI]]];
-
-Which[!OrderedQ[aux],
-aux=Ordering[aux];
-AppendTo[result,{projectionMatrixChunk,projectionMatrixChunk[[aux]]}];
-,subgroupI===SO8,
-AppendTo[result,{projectionMatrixChunk,projectionMatrixChunk[[{1,2,4,3}]],projectionMatrixChunk[[{3,2,1,4}]],projectionMatrixChunk[[{3,2,4,1}]],projectionMatrixChunk[[{4,2,1,3}]],projectionMatrixChunk[[{4,2,3,1}]]}];
-,True, (* If group has no complex representations and it is not SO8 ... *)
-AppendTo[result,{projectionMatrixChunk}];
-];
-,
-AppendTo[result,{projectionMatrixChunk}];
-];
-,{i,Length[subgroup]}];
-
-result=Join@@@Tuples[result];
-Return[result];
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
+(* ::Input::Initialization:: *)
 (* "C"=Complex, "R"=Real or "PR"=Pseudo-Real; see Slansky *)
-TypeOfRepresentation[group_,repIn_]:=Module[{groupFamily,rep,groupSeries,aux,hasRealForm,result,IsSelfConjugate},
+TypeOfRepresentation[group_,repIn_]:=Module[{aux},
+If[IsSimpleGroupQ[group],Return[TypeOfRepresentationAux[group,repIn]]];
+
+aux=MapThread[TypeOfRepresentationAux,{group,repIn}];
+If[MemberQ[aux,"C"],Return["C"]];
+
+If[Mod[Count[aux,"PR"],2]==0,Return["R"],Return["PR"]];
+]
+
+
+TypeOfRepresentationAux[group_,repIn_]:=Module[{groupFamily,rep,groupSeries,aux,hasRealForm,result,IsSelfConjugate},
+
+If[group===U1,Return[If[repIn=!=0,"C","R"]]];
+
 {groupFamily,groupSeries}=CMtoFamilyAndSeries[group];
 
 rep=SimpleRepInputConversion[group,repIn];
@@ -4117,10 +5183,8 @@ group==E8,"R"];
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 Options[SpecialMaximalSubgroupProjectionMatrix]={IncludeTrivialVariations->True};
 SpecialMaximalSubgroupProjectionMatrix[group_,subgroup_,OptionsPattern[]]:=Module[{groupFamily,groupSeries,result,errorMsg},
 
@@ -4155,6 +5219,8 @@ result=Flatten[ExpandListOfProjectionMatricesUsingCMSymmetries[subgroup,#]&/@res
 Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXX Special Maximal Subalgebras of the classical group for the form G1 (ie, simple) XXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
@@ -4245,6 +5311,8 @@ AppendTo[result,projectionMatrix];
 Return[result];
 ]
 
+
+(* ::Input::Initialization:: *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX Special Maximal Subalgebras of the classical group for the form {G1,G2} XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
@@ -4265,8 +5333,8 @@ If[meantGF=="D"&&group==2IdentityMatrix[2],result=Weights[group,{1,1}]];
 Return[result];
 ]
 
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* ::Input::Initialization:: *)
 SpecialMaximalSubgroupProjectionMatrix\[UnderBracket]Aux2[group_,{subgroup1_,subgroup2_}]:=Module[{groupFamily,groupSeries,subgroup1Family,subgroup1Series,subgroup2Family,subgroup2Series,errorMsg,projectionMatrix,w,w1,w2,wp,wSave,wp1Save,wp2Save,wpSave,aux,branchUsed,meantGF,meantS1F,meantS2F},
 {groupFamily,groupSeries}=CMtoFamilyAndSeries[group];
 {subgroup1Family,subgroup1Series}=If[subgroup1==2IdentityMatrix[2],{"D",2},CMtoFamilyAndSeries[subgroup1]];
@@ -4323,6 +5391,8 @@ If[aux!=Sort[wpSave],projectionMatrix=errorMsg];
 Return[{projectionMatrix}];
 ]
 
+
+(* ::Input::Initialization:: *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
 (*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
 (*XXXXXXXXX Projection matrices of the maximal S-subalgebras of the exceptional groups[see E.B.Dynkin's paper,tables 41 and 42] XXXXXXXX  *)
@@ -4366,270 +5436,8 @@ Return[projectionMatrices];
 ]
 
 
-{E6toGSM,SO10toGSM,SO14toGSM,SO18toGSM,SO18toGSMchiral,SU5toGSM,SU6toGSM,SU7toGSM,SU8toGSM,SU9toGSM,SU10toGSM,SU11toGSM,SU12toGSM,SU6toSU5,SU7toSU5,SU8toSU5,SU9toSU5,SU10toSU5,SU11toSU5,SU12toSU5,SU13toSU5,SU14toSU5,SU15toSU5,SU16toSU5,SU17toSU5,SU18toSU5,SU19toSU5,SU20toSU5,E6toSU5,SO10toSU5,SO14toSU5,SO18toSU5,SO22toSU5,SO26toSU5,SO30toSU5}=Uncompress["1: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"];
-
 
 (* ::Input::Initialization:: *)
-(* Auxiliar function to IsSubEmbeddingQ *)
-
-(* In a very simplistic way sorts the factor groups *)
-(* It similar to (but different) 'ReorderGroupFactors' *)
-SortEmbedding[embedding_]:=Module[{group,projectionMatrix,ordering,aux,linesOfProjMatrix},
-{group,projectionMatrix}=embedding;
-aux=(Length/@group)/. 0->1;
-linesOfProjMatrix=MapThread[Range,{Accumulate[aux]-aux+1,Accumulate[aux]}];
-
-ordering=OrderingBy[group,{-Length[#],#}&];
-group=group[[ordering]];
-projectionMatrix=projectionMatrix[[Flatten[linesOfProjMatrix[[ordering]]]]];
-
-Return[{group,projectionMatrix}]
-]
-
-(* Checks if emb2 is just emb1 broken further, or not. emb1 and emb2 should be of the form {<subgroup>,<projection matrix>} *)
-(* Symmetry of the group; symmetry of the subgroups; permutation of equal factor subgroups; reordering of factor subgroups: all this is used to match the 2 embeddings *)
-
-(* limit is a number which can be used to stop IsSubEmbeddingQ from making long computations. It works like this: MaximalSubgroups calls IsSubEmbeddingQ a first time with some value limit1 to prune the list of possible maximal subgroups. MaximalSubgroups also track those cases where IsSubEmbeddingQ did not make a fullcheck due to the value limit1. If those tracked embeddings were not exclused as non-maximal in the initial run (they might be subembeddings of some other embeddigns for which the value limit1 was not reached) then MaximalSubgroups will call again IsSubEmbeddingQ, but this time with limit=-1, which is the same as limit=\[Infinity] *)
-IsSubEmbeddingQ[group_,emb1_,emb2_,limit_:-1]:=Module[{g1,g2,pj1,pj2,n1,n2,result,aux,auxGrps,auxPrj,emb1Mod,irrepSizes1,irrepSizes2,possibleSupergroupsIrrepSizes2,linesOfProjMatrix2,permutations0,permutations,pj2Mods,linesOfProjMatrix2Mod,equivalencQ,sgn1,sgn2},
-
-{g1,pj1}=SortEmbedding[emb1];
-{g2,pj2}=SortEmbedding[emb2];
-
-n1=Length[emb1[[2]]];
-n2=Length[emb2[[2]]];
-
-If[n1<n2,Return[False]];
-
-(* [START] quick test to see if emb2 can be embedded in group by using emb1 and breaking this subgroup further. In order for that to be possible, for a given irrep of group, it pieces p1 and p2 that it break into under emb1 and emb2 must have sizes such the subreps in p2 must for in groups the subreps in p1. For example, if the subreps p1 have sizes {5,2} and those in p2 have size {6,1} then, no mather what subgroups we are talking about, we cannot have group \[Rule] emb1 \[Rule] emb2 *)
-(* However, in the case of SO8 one must be careful: the group's symmetry can be used to change the subrep dimensions. This is not true for subreps obtained from SO8 *)
-
-If[!MemberQ[group,SO8],
-(* Use only the 1st irrep ofirrepSizes1 and irrepSizes2 even for SO(2n) groups; we don't wish to distinguish conjugated embeddings *)
-irrepSizes1=SizeOfSubrepsOfImportantReps[group,emb1[[1]],emb1[[2]],TreatSO2NCorrectly->False];
-irrepSizes2=SizeOfSubrepsOfImportantReps[group,emb2[[1]],emb2[[2]],TreatSO2NCorrectly->False];
-
-(* Very quick test #1 *)
-If[Max[irrepSizes1[[1]]]<Max[irrepSizes2[[1]]]||Min[irrepSizes1[[1]]]<Min[irrepSizes2[[1]]],Return[False]];
-(* Very quick test #2 *)
-If[!MemberQ[Total/@Tuples[Cases[FrobeniusSolve[irrepSizes2[[1]],#],x_/;Max[x]<=1]&/@irrepSizes1[[1]]],x_/;x==0x+1],Return[False]];
-
-(* This 'quick test' runs into memory problems if Max[Length/@irrepSizes2] is large *)
-If[Max[Length/@irrepSizes2]<=7,
-possibleSupergroupsIrrepSizes2=Tuples[Table[Reverse/@Sort/@Map[Total,PossibleListPartitions[irrepSizes2[[repImpI]]],{2}],{repImpI,1}]];
-If[!MemberQ[possibleSupergroupsIrrepSizes2,irrepSizes1[[1;;1]]],Return[False]];
-];
-];
-(* [END] quick test *)
-
-aux=FindAllEmbeddingsAUX[g1,g2,OriginalGroup->Null,StartingProjectionMatrix->Null,StrictEquality->(!MemberQ[Join[g1,g2],U1]),DeleteU1s->(!MemberQ[Join[g1,g2],U1]),Quick->"VeryQuick",VeryQuickLimit->limit]; 
-
-If[aux==="Aborted",Return["LimitReached"]];
-
-auxGrps=aux[[All,1]];
-(* ExpandListOfProjectionMatricesUsingSubgroupSymmetries is to take care of the fact that we might be 'integrating out 'SO(8)'s, which have a symmetry which is then invisible to ProjectionMatrixEquivalenceQ2 a few lines below *)
-auxPrj=Table[#.pj1Mod&/@aux[[All,2]],{pj1Mod,ExpandListOfProjectionMatricesUsingSubgroupSymmetries[g1,pj1,UseSO8Symmetry->True,UseConjugations->False]  }];
-emb1Mod=SortEmbedding/@Flatten[MapThread[List,{auxGrps,#}]&/@auxPrj,1];
-
-(* NOTE: ProjectionMatrixEquivalenceQ2 will consider a) symmetries of the group b) symmetries of the subgroup and c) permutations of equal subgroup factor groups. So there is no need to do that above. Conjugated embeddings are to be treated as the same embedding, so TreatSO2NCorrectly\[Rule]False is ok. *)
-
-If[limit=!=-1&&Length[aux]>limit,Return["LimitReached"];];
-equivalencQ=False;
-
-sgn2=Sort/@Map[DimRTotal[g2,#]&,EmbeddingSignature[group,g2,pj2,TreatSO2NCorrectly->False],{2}];
-Do[
-sgn1=Sort/@Map[DimRTotal[e1[[1]],#]&,EmbeddingSignature[group,e1[[1]],e1[[2]],TreatSO2NCorrectly->False],{2}];
- 
-If[sgn1===sgn2,
-
-equivalencQ=ProjectionMatrixEquivalenceQ2[group,e1[[1]],g2,e1[[2]],pj2,UseAlsoGroupSymmetry->True,TreatSO2NCorrectly->False];
-If[equivalencQ,Break[]];
-];
-,{e1,emb1Mod}];
-
-Return[equivalencQ];
-]
-
-
-(* Auxiliar function to IsSubEmbeddingQ *)
-(* Important reps for the comparison of embeddings *)
-(* See "THE SEMISIMPLE SUBALGEBRASOF EXCEPTIONAL LIE ALGEBRAS", A.N.MINCHENKO, https://www.ams.org/journals/mosc/2006-67-00/S0077-1554-06-00156-7/S0077-1554-06-00156-7.pdf *)
-
-Options[ImportantReps]={TreatSO2NCorrectly->True};
-ImportantReps[group_,OptionsPattern[]]:=Module[{familyAndSeries,aux,result,family,series,tbl},
-
-(* If group is not simple *)
-If[!IsSimpleGroupQ[group],
-aux=ImportantReps[#,TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]]&/@group;
-result=Table[UnitVector[Length[group],i]aux,{i,Length[group]}];
-result=DeleteDuplicates[Flatten[Tuples/@result,1]];
-Return[result];
-];
-
-If[group===U1,Return[{1}]];
-If[group===SO8,Return[{{1,0,0,0},{0,0,1,0},{0,0,0,1}}]];
-
-{family,series}=CMtoFamilyAndSeries[group];
-
-If[family==="A"||family==="B"||family==="C",Return[{UnitVector[series,1]}]];
-If[family==="D"&&OptionValue[TreatSO2NCorrectly],Return[{Reverse[UnitVector[series,1]]}]];
-
-(* Embeddings of some subgroup in SO(2n) which are distinct but conjugated to one-another may be confused *)
-If[family==="D"&&!OptionValue[TreatSO2NCorrectly],Return[{UnitVector[series,1]}]];
-
-If[family==="G",Return[{{0,1}}]];
-If[family==="F",Return[{{0,0,0,1}}]];
-If[family==="E"&&series===6,Return[{UnitVector[series,1]}]];
-If[family==="E"&&series===7,Return[{{0,0,0,0,0,1,0}}]];
-If[family==="E"&&series===8,Return[{{0,0,0,0,0,0,1,0}}]];
-
-Return[result];
-]
-
-(* Auxiliar function to IsSubEmbeddingQ *)
-(* It calculates the size of the subreps of the Important reps, under some embedding *)
-Options[SizeOfSubrepsOfImportantReps]={TreatSO2NCorrectly->True};
-SizeOfSubrepsOfImportantReps[group_,subgroup_,projMat_,OptionsPattern[]]:=Module[{aux,result},
-aux=DecomposeRep[group,#,subgroup,projMat]&/@ImportantReps[group,TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-result=Reverse/@Sort/@Map[Times@@DimR[subgroup,#]&,aux,{2}];
-Return[result];
-]
-
-Options[DIOfSubrepsOfImportantReps]={TreatSO2NCorrectly->True};
-DIOfSubrepsOfImportantReps[group_,subgroup_,projMat_]:=Module[{aux,result},
-aux=DecomposeRep[group,#,subgroup,projMat]&/@ImportantReps[group,TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-result=Reverse/@Sort/@Map[((Times@@DimR[subgroup,#])DynkinIndex[subgroup,#]/DimR[subgroup,#])&,aux,{2}];
-Return[result];
-]
-
-(* E.g.: PossibleListPartitions[{x1,x2,x3,x4}] *)
-PossibleListPartitions[list_]:=Module[{pos,aux,starts,ends,result},
-aux=Flatten[Permutations/@IntegerPartitions[Length[list]],1];
-pos=(starts=Accumulate[#]-#+1;ends=Accumulate[#];MapThread[Range,{starts,ends}])&/@aux;
-result=Flatten[Table[Map[listP[[#]]&,pos,{2}],{listP,DeleteDuplicates[Permutations[list]]}],1];
-
-result=DeleteDuplicates[Sort/@Map[Sort,result,{2}]];
-Return[result];
-]
-
-
-(* ::Input::Initialization:: *)
-(*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
-(*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
-(*XXXXXXXXX CODE ADDED ON 16/DECEMBER/2019:  XXXXXXXX  *)
-(*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
-(*XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  *)
-
-(* Auxiliar function to ProjectionMatrixEquivalenceQ2 *)
-ProjectionMatrixEquivalenceQ2AUX[group_,projectionMatrix_]:=Module[{groupI,startP,endP,aux,projectionMatrixChunk,result},
-aux=Max[1,Length[#]]&/@group;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-
-result={};
-Do[
-groupI=group[[i]];
-projectionMatrixChunk=projectionMatrix[[All,startP[[i]];;endP[[i]]]];
-If[groupI===SO8,
-AppendTo[result,{projectionMatrixChunk,projectionMatrixChunk[[All,{1,2,4,3}]],projectionMatrixChunk[[All,{3,2,1,4}]],projectionMatrixChunk[[All,{3,2,4,1}]],projectionMatrixChunk[[All,{4,2,1,3}]],projectionMatrixChunk[[All,{4,2,3,1}]]}];
-,
-AppendTo[result,{projectionMatrixChunk}];
-];
-,{i,Length[group]}];
-
-result=Transpose/@(Join@@@Map[Transpose,Tuples[result],{2}]);
-Return[result];
-]
-
-
-
-(* Consider also permutations of factor groups [NO: IT DOES NOT] and factor subgroups, as well as symmetries of subgroups. With UseAlsoGroupSymmetry\[Rule]True, the symmetry of the group is also used (this only affects SO8's because conjugation symmetries are already probed through the symmetries of the subgroup) *)
-
-(* Used in IsSubEmbeddingQ *)
-
-Options[ProjectionMatrixEquivalenceQ2]={LooseMatch->False,TreatSO2NCorrectly->True,UseAlsoGroupSymmetry->False};
-ProjectionMatrixEquivalenceQ2[group_,subgroup1In_,subgroup2In_,projectionMatrix1In_,projectionMatrix2In_,OptionsPattern[]]:=Module[{projectionMatrices1,result,aux,startP,endP},
-If[!OptionValue[UseAlsoGroupSymmetry],
-projectionMatrices1=ExpandListOfProjectionMatrices[subgroup1In,projectionMatrix1In];
-,
-projectionMatrices1=ExpandListOfProjectionMatrices[group,subgroup1In,projectionMatrix1In];
-];
-
-(*
-If[OptionValue[UseAlsoGroupSymmetry],
-projectionMatrices1=Flatten[ProjectionMatrixEquivalenceQ2AUX[group,#]&/@projectionMatrices1,1];
-];
-*)
-result=False;
-Do[
-result=ProjectionMatrixEquivalenceQ[group,subgroup1In,subgroup2In,prj1,projectionMatrix2In,LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-If[result,Break[]];
-,{prj1,projectionMatrices1}];
-Return[result];
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-(* The same as DeleteDuplicateEmbeddingsCases, but using ProjectionMatrixEquivalenceQ2 instead of ProjectionMatrixEquivalenceQ *)
-(* This function checks if two embeddings are the same. They are the same if they can be related by A) subgroup permutation of equal factors B) symmetry of subgroup factor groups C) permutations of equal group factors [NO: IT DOES NOT] D) group symmetry [optional] *)
-
-(* Quick\[Rule]True will only partially prune the list of embeddings. Ie, an incomplete check of equivalence is made *)
-Options[DeleteDuplicateEmbeddingsCases2]={LooseMatch->False,TreatSO2NCorrectly->True,UseAlsoGroupSymmetry->False,Quick->False};
-DeleteDuplicateEmbeddingsCases2[group_,listOfEmbbedings_,OptionsPattern[]]:=Module[{aux,listOfEmbbedingsMOD},
-
-listOfEmbbedingsMOD={#,EmbeddingSignature[group,#[[1]],#[[2]]]}&/@listOfEmbbedings;
-listOfEmbbedingsMOD=Table[{el[[1]],el[[2]],Map[Sort,Map[DimRTotal[el[[1,1]],#]&,el[[2]],{2}],{1}]},{el,listOfEmbbedingsMOD}];
-
-(* Do not compare embeddings which are obviously different: different groups and/or that the dimensions of the subreps for each are different *)
-aux=Gather[listOfEmbbedingsMOD,(Sort[Length/@DeleteCases[#1[[1,1]],U1]]==Sort[Length/@DeleteCases[#2[[1,1]],U1]]&&(#1[[3]]===#2[[3]]))&];
-
-(* Very simple comparison of the embeddings. But it fails to consider A) subgroup permutation of equal factors B) symmetry of subgroup factor groups C) permutations of equal group factors D) group symmetry  *)
-If[!MemberQ[group,SO8],
-aux=Table[DeleteDuplicates[auxI,((#1[[1]]===#2[[1]])&&(#1[[2]]===#2[[2]]))&],{auxI,aux}];
-];
-aux=aux[[All,All,1]];
-
-(* Quick\[Rule]True skips the thorough test *)
-If[OptionValue[Quick],Return[Flatten[aux,1]]];
-
-(* Thorough test of equivalence of embeddings *)
-aux=Flatten[Table[DeleteDuplicateEmbeddingsCases2\[UnderBracket]Aux[group,el,LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly],UseAlsoGroupSymmetry->OptionValue[UseAlsoGroupSymmetry]],{el,aux}],1];
-Return[aux];
-]
-
-(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
-
-Options[DeleteDuplicateEmbeddingsCases2\[UnderBracket]Aux]={LooseMatch->False,TreatSO2NCorrectly->True,UseAlsoGroupSymmetry->False};
-DeleteDuplicateEmbeddingsCases2\[UnderBracket]Aux[group_,listOfEmbbedings_,OptionsPattern[]]:=Module[{result,whatToDo,aux,replacePositions},
-result={};
-
-Do[
-(* Print[i]; *)
-whatToDo="AddRecord";
-replacePositions={};
-Do[
-If[!(whatToDo=="ReplaceRecord"),
-aux=ProjectionMatrixEquivalenceQ2[group,result[[j,1]],listOfEmbbedings[[i,1]],result[[j,2]],listOfEmbbedings[[i,2]],LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly],UseAlsoGroupSymmetry->OptionValue[UseAlsoGroupSymmetry]];
-If[aux,whatToDo="Nothing"; Break[]];
-];
-aux=ProjectionMatrixEquivalenceQ2[group,listOfEmbbedings[[i,1]],result[[j,1]],listOfEmbbedings[[i,2]],result[[j,2]],LooseMatch->OptionValue[LooseMatch],TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly],UseAlsoGroupSymmetry->OptionValue[UseAlsoGroupSymmetry]];
-If[aux,whatToDo="ReplaceRecord";AppendTo[replacePositions,{j}]];
-,{j,Length[result]}];
-
-Which[
-whatToDo=="AddRecord",AppendTo[result,listOfEmbbedings[[i]]],
-whatToDo=="ReplaceRecord",result[[replacePositions[[1,1]]]]=listOfEmbbedings[[i]];result=Delete[result,replacePositions[[2;;-1]]]];
-,{i,Length[listOfEmbbedings]}];
-
-Return[result];
-]
-
-
-(* ::Input::Initialization:: *)
-ExpandListOfProjectionMatricesForSO8Group[projectionMatrix_]:=Module[{projectionMatrices},
-projectionMatrices={projectionMatrix,projectionMatrix[[All,{1,2,4,3}]],projectionMatrix[[All,{3,2,1,4}]],projectionMatrix[[All,{3,2,4,1}]],projectionMatrix[[All,{4,2,1,3}]],projectionMatrix[[All,{4,2,3,1}]]};
-Return[projectionMatrices];
-]
-
 (* Used to extend the concept of conjugation also to Dn groups which do not have complex representations *)
 (* The Dn family can be tricky, since it has a conjugation-like symmetry, but it is not a conjugations (all reps are real). For example all reps of SO(12) are real, but still there is a trivial transformation that can be done to pairs of reps *)
 GeneralizedConjugateIrrep[simplegroup_,rep_]:=Module[{result},
@@ -4642,9 +5450,11 @@ result=ConjugateIrrep[simplegroup,rep];
 Return[result];
 ]
 
-(* In ExpandListOfProjectionMatrices it comes in handy not to consider conjugations. That is the only reason for the option UseConjugations *)
-Options[ExpandListOfProjectionMatricesUsingSubgroupSymmetries]={UseSO8Symmetry->True,UseConjugations->True};
-ExpandListOfProjectionMatricesUsingSubgroupSymmetries[subgroup_,projectionMatrix_,OptionsPattern[]]:=Module[{subgroupI,startP,endP,aux,projectionMatrixChunk,result},
+
+(* ::Input::Initialization:: *)
+(* Uses the symmetries of the Dynkin diagram of the subgroup to get the trivial variations of a given projection matrix *)
+(* Note that right now this function is not used anywhere. It can be called elsewhere, but a choice of flag means tat in practice it is never called *)
+ExpandListOfProjectionMatricesUsingCMSymmetries[subgroup_,projectionMatrix_]:=Module[{subgroupI,startP,endP,aux,projectionMatrixChunk,result},
 aux=Max[1,Length[#]]&/@subgroup;
 startP=Accumulate[aux]-aux+1;
 endP=startP+aux-1;
@@ -4656,10 +5466,10 @@ projectionMatrixChunk=projectionMatrix[[startP[[i]];;endP[[i]]]];
 If[subgroupI=!=U1,
 aux=GeneralizedConjugateIrrep[subgroupI,Array[mrk,Length[subgroupI]]];
 
-Which[!OrderedQ[aux]&&OptionValue[UseConjugations],
+Which[!OrderedQ[aux],
 aux=Ordering[aux];
 AppendTo[result,{projectionMatrixChunk,projectionMatrixChunk[[aux]]}];
-,subgroupI===SO8&&OptionValue[UseSO8Symmetry],
+,subgroupI===SO8,
 AppendTo[result,{projectionMatrixChunk,projectionMatrixChunk[[{1,2,4,3}]],projectionMatrixChunk[[{3,2,1,4}]],projectionMatrixChunk[[{3,2,4,1}]],projectionMatrixChunk[[{4,2,1,3}]],projectionMatrixChunk[[{4,2,3,1}]]}];
 ,True, (* If group has no complex representations and it is not SO8 ... *)
 AppendTo[result,{projectionMatrixChunk}];
@@ -4673,78 +5483,18 @@ result=Join@@@Tuples[result];
 Return[result];
 ]
 
-ExpandListOfProjectionMatricesWithPermutationsEqualFactors[subgroup_,projectionMatrix_]:=Module[{aux,aux2,permutationsOfFactorGroups,startP,endP,linesOfEachFactorSubgroup,permutationsOfLines},
 
-(* [START] Find possible permutations to perform of the factor subgroups (U1s are never permuted) *)
-aux=Table[{subgroup[[i]],i},{i,Length[subgroup]}];
-aux={#[[1,1]],#[[All,2]]}&/@GatherBy[aux,#[[1]]&];
-aux2=If[#[[1]]===U1,{#[[2]]},Permutations[#[[2]]]]&/@aux;
+(* ::Input::Initialization:: *)
+(* Load some pre-computed data for EmbeddingsOnSimpleGroup and MaximalSubgroups (for speed only). If this is not done, they program will still run. *)
+If[FileExistsQ[FileNameJoin[{$GroupMathDirectory,"pre_computed_data"}]],
 
-aux2=Flatten/@Tuples[aux2];
-permutationsOfFactorGroups=aux2[[1,InvertOrdering[#]]]&/@aux2;
-(* [END] Find possible permutations to perform of the factor subgroups (U1s are never permuted) *)
+{$GMData1,$GMData2}=Uncompress[Import[FileNameJoin[{$GroupMathDirectory,"pre_computed_data"}]]];
+$GMData2=Transpose[$GMData2];
+Do[EmbeddingsOnSimpleGroup[$GMData1[[1,grI]],$GMData1[[2,subGrI]]]=$GMData1[[3,grI,subGrI]],{grI,Length[$GMData1[[1]]]},{subGrI,Length[$GMData1[[2]]]}];
+Do[MaximalSubgroups[grpEl[[1]],RplusS->True,OnlyMaximalSubgroups->True]=grpEl[[2]];,{grpEl,$GMData2}];
 
-(* [START] Convert permutations of factor group into permutations of lines *)
-aux=Max[1,Length[#]]&/@subgroup;
-startP=Accumulate[aux]-aux+1;
-endP=startP+aux-1;
-
-linesOfEachFactorSubgroup=Range@@@Transpose[{startP,endP}];
-permutationsOfLines=Flatten[linesOfEachFactorSubgroup[[#]]]&/@permutationsOfFactorGroups;
-(* [END] Convert permutations of factor group into permutations of lines *)
-
-Return[projectionMatrix[[#]]&/@permutationsOfLines];
-]
-
-(* Consider A)- the subgroup symmetries B)- permutations of equal factor subgroups. Symmetry of the group (in particular SO8 factors is NOT considered) *)
-
-Options[ExpandListOfProjectionMatrices]={UseSO8Symmetry->True,UseConjugations->True};
-ExpandListOfProjectionMatrices[subgroup_,projectionMatrix_,OptionsPattern[]]:=Module[{conjProjectionMatrices,result},
-conjProjectionMatrices=ExpandListOfProjectionMatricesUsingSubgroupSymmetries[subgroup,projectionMatrix,UseSO8Symmetry->OptionValue[UseSO8Symmetry],UseConjugations->OptionValue[UseConjugations]];
-
-result=Flatten[ExpandListOfProjectionMatricesWithPermutationsEqualFactors[subgroup,#]&/@conjProjectionMatrices,1];
-result=DeleteDuplicates[result];
-Return[result];
-]
-
-(* Consider A)- the subgroup symmetries B)- permutations of equal factor subgroups, C)- symmetry of the group *)
-
-(* Options[ExpandListOfProjectionMatrices]={UseSO8Symmetry\[Rule]True}; *)
-ExpandListOfProjectionMatrices[group_,subgroup_,projectionMatrix_,OptionsPattern[]]:=Module[{conjProjectionMatrices,result},
-conjProjectionMatrices=ExpandListOfProjectionMatricesUsingSubgroupSymmetries[subgroup,projectionMatrix,UseSO8Symmetry->OptionValue[UseSO8Symmetry]];
-
-(* No need to apply conjugations to the group; that was already done to the subgroup in the previous line *)
-conjProjectionMatrices=Transpose/@Flatten[ExpandListOfProjectionMatricesUsingSubgroupSymmetries[group,Transpose[#],UseSO8Symmetry->OptionValue[UseSO8Symmetry],UseConjugations->False]&/@conjProjectionMatrices,1];
-conjProjectionMatrices=DeleteDuplicates[conjProjectionMatrices];
-
-result=Flatten[ExpandListOfProjectionMatricesWithPermutationsEqualFactors[subgroup,#]&/@conjProjectionMatrices,1];
-result=Transpose/@Flatten[ExpandListOfProjectionMatricesWithPermutationsEqualFactors[group,Transpose[#]]&/@result,1];
-result=DeleteDuplicates[result];
-Return[result];
-]
-
-
-
-
-(* EmbeddingSignature and DimRTotal are used to help get a quick way to see if two embeddings +++can+++ be the same or not. *) 
-Options[EmbeddingSignature]={TreatSO2NCorrectly->True};
-EmbeddingSignature[group_,subgroup_,projectionMatrix_,OptionsPattern[]]:=Module[{impReps,decomposition,posSO8},
-impReps=ImportantReps[group,TreatSO2NCorrectly->OptionValue[TreatSO2NCorrectly]];
-
-(* The problem with SO(8): we want that two equal embeddings (up to symmetries of the group and subgroup) to be comparable by their EmbeddingSignature. Specifically, DimR applied to EmbeddingSignature should be the same. This fails for SO8's so we make  EmbeddingSignature trivial for SO8 to avoid problems. *)
-posSO8=Flatten[Position[group,SO8]];
-If[posSO8=!={},
-impReps[[All,posSO8]]=0impReps[[All,posSO8]];
-impReps=DeleteDuplicates[impReps];
+ClearAll[$GMData1,$GMData2];
 ];
-
-decomposition=Table[DecomposeRep[group,impRep,subgroup,projectionMatrix],{impRep,impReps}];
-decomposition=Sort/@decomposition;
-
-Return[decomposition];
-]
-
-DimRTotal[group_,rep_]:=Times@@DimR[group,rep]
 
 
 (* ::Input::Initialization:: *)
@@ -4759,5 +5509,81 @@ reps=DeleteCases[reps,x_/;DimR[group,x]!=dim];
 reps=Sort[reps,OrderedQ[{Join[{DimR[group,#1],RepresentationIndex[group,#1]},ConjugacyClass[group,#1],-#1],Join[{DimR[group,#2],RepresentationIndex[group,#2]},ConjugacyClass[group,#2],-#2]}]&];
 
 result=If[rep>0,reps[[1]],ConjugateIrrep[group,reps[[1]]]];
+Return[result];
+]
+
+
+(* ::Input::Initialization:: *)
+MergeU1s[embeddingsData_,decData_,nU1s_]:=Module[{posU1s,posNonU1s,newDec,newData,aux},
+newDec=Reap[Do[
+posU1s=Flatten[Position[embeddingsData[[i,1]],U1]];
+posNonU1s=Complement[Range[Length[embeddingsData[[i,1]]]],posU1s];
+newData=Reap[Do[
+aux=el[[Join[posNonU1s,posU1s[[1;;nU1s]]]]];
+If[nU1s>0,
+aux[[-1]]=el[[posU1s[[nU1s;;-1]]]].Table["x"<>ToString[j],{j,0,Length[posU1s]-nU1s}];
+aux[[-1]]=aux[[-1]]/."x0"->1;
+];
+Sow[aux];
+,{el,decData[[i]]}]][[2,1]];
+Sow[newData];
+,{i,Length[embeddingsData]}]][[2,1]];
+Return[newDec];
+]
+
+DecomposeRep[groupIn_,repIn_,subgroupIn_,OptionsPattern[]]:=Module[{group,rep,repIn2,subgroup,embeddings,nU1s,decompositionData,dataMod,grid,maxU1s,nExtraU1s,xiString},
+repIn2=SimpleRepInputConversion[groupIn,repIn];
+{group,rep}=If[IsSimpleGroupQ[groupIn],{{groupIn},{repIn2}},{groupIn,repIn2}];
+subgroup=If[IsSimpleGroupQ[subgroupIn],{subgroupIn},subgroupIn];
+
+embeddings=Embeddings[group,subgroup];
+
+If[embeddings==={},
+Print[StyledTextLine[{{"It is not possible to embed " ,"Gr"},{CMtoName[subgroup],"R"},{" in ","Gr"},{CMtoName[group],"R"},{".","Gr"}}]];
+Return[{}];
+];
+
+decompositionData=DecomposeRep[group,rep,#[[1]],#[[2]],UseName->False]&/@embeddings;
+
+nU1s=Count[subgroup,U1];
+decompositionData=MergeU1s[embeddings,decompositionData,nU1s];
+
+dataMod=Table[RepName[subgroup,#]&/@decompositionData[[i]],{i,Length[decompositionData]}];
+
+
+dataMod=Table[Prepend[dataMod[[i]],Style["#"<>ToString[i],{Darker[Red],Bold}]],{i,Length[decompositionData]}];
+
+dataMod=Prepend[dataMod,Join[{Style["Embedding",{Bold,Darker[Red]}],Style["Decomposition",{Bold,Darker[Red]}]},ConstantArray[SpanFromLeft,Max[Length/@decompositionData]-1]]];
+grid=Grid[dataMod,ItemSize->Full,Dividers->{Join[{1->{LightGray,Thick},2->{LightGray,Thick},-1->{LightGray,Thick}},Table[i->LightGray,{i,3,Max[Length/@dataMod]-0}]],Join[{2->{LightGray,Thick},1->{LightGray,Thick},-1->{LightGray,Thick}},Table[i->LightGray,{i,3,Length[dataMod]-0}]]}];
+
+
+(* Print a text message with some information about the table which is about to be printed *)
+If[Length[embeddings]>1,
+Print[StyledTextLine[{{"There are " ,"Gr"},{Length[embeddings],"R"},{" non-equivalent ways of embedding ","Gr"},{CMtoName[subgroupIn],"R"},{" in ","Gr"},{CMtoName[groupIn],"R"},{".","Gr"}}]];
+
+maxU1s=Max[Count[#,U1]&/@embeddings[[All,1]]];
+nExtraU1s=maxU1s-nU1s;
+
+If[nU1s>0&&nExtraU1s>1,xiString=" ("<>StringJoin[Riffle[Table["x"<>ToString[i],{i,nExtraU1s}],", "]]<>" are free real numbers)"];
+If[nU1s>0&&nExtraU1s==1,xiString=" (x1 is a free real number)"];
+If[nU1s==0||nExtraU1s==0,xiString=""];
+
+Print[StyledTextLine[{{"Under each of them, the representation " ,"Gr"},{repIn,"R"},{" decomposes as follows"<>xiString<>":","Gr"}}]];
+,
+Print[StyledTextLine[{{"There is only one way of embedding " ,"Gr"},{CMtoName[subgroup],"R"},{" in ","Gr"},{CMtoName[group],"R"},{".","Gr"}}]];
+Print[StyledTextLine[{{"Under it the representation " ,"Gr"},{RepName[group,rep],"R"},{" = ","R"},{rep,"R"},{" decomposes as follows:","Gr"}}]];
+];
+
+
+Print[grid];
+(* Return[decompositionData]; *)
+Return[];
+]
+
+StyledTextLine[strings0_,style_:{{"Gr",Style[#,{GrayLevel[0.5]}]&},{"B",Style[#,{Darker[Blue],Bold}]&},{"R",Style[#,{Darker[Red],Bold}]&},{"None",#&}}]:=Module[{strings,rule,result},
+strings=strings0;
+strings[[All,1]]=If[StringQ[#]||Head[#]===OverBar,#,ToString[#]]&/@strings0[[All,1]];
+rule=Table[{x_,el[[1]]}:>Evaluate[el[[2]][x]],{el,style}];
+result=Row[strings/.rule];
 Return[result];
 ]

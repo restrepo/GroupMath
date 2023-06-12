@@ -185,7 +185,7 @@ Return[result];
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
 Options[Plethysms]={UseName->False};
-Plethysms[cm_,weightIn_,partition_,OptionsPattern[]]:=Plethysms[cm,weightIn,partition]=Module[{weight,n,kList,aux,aux1,aux2,factor,sum},
+Plethysms[cm_,weightIn_,partition_,OptionsPattern[]]:=Plethysms[cm,weightIn,partition]=Module[{weight,n,kList,aux,aux1,aux2,factor,sum,antiFundamentalQ,result},
 weight=SimpleRepInputConversion[cm,weightIn];
 n=Plus@@partition;
 
@@ -193,6 +193,21 @@ n=Plus@@partition;
 If[cm===U1,
 Return[If[Length[partition]==1,{{n weight,1}},{}]];
 ];
+
+(* If group = SU(n) and weight is the fundamental or anti-fundamental *)
+If[Total[weight]==1 &&(weight[[1]]==1||weight[[-1]]==1)&&cm==CartanMatrix["SU",Length[cm]+1],
+antiFundamentalQ=!(weight[[1]]==1);
+
+result=ConvertPartitionToDynkinCoef[Length[cm]+1,partition];
+If[antiFundamentalQ,result=Reverse[result]];
+If[result=!={},result={{result,1}}];
+
+If[OptionValue[UseName],
+result=MapThread[List,{RepNameBatchMode[cm,Simplify[result[[All,1]]]],result[[All,2]]}]];
+Return[result];
+];
+
+
 
 kList=IntegerPartitions[n];
 sum={};
@@ -210,7 +225,8 @@ AppendTo[sum,aux];
 
 sum=GatherWeights[sum];
 
-If[OptionValue[UseName],sum={RepName[cm,#[[1]]],#[[2]]}&/@sum];
+If[OptionValue[UseName],
+sum=MapThread[List,{RepNameBatchMode[cm,Simplify[sum[[All,1]]]],sum[[All,2]]}]];
 Return[sum];
 ]
 
@@ -300,9 +316,13 @@ Return[aux];
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* Alias of PermutationSymmetryOfTensorProductParts *)
+Options[PermutationSymmetry]={DistinguishFields->False,UseName->False};
+PermutationSymmetry[groupIn_,listOfRepsIn_,OptionsPattern[]]:=PermutationSymmetryOfTensorProductParts[groupIn,listOfRepsIn,DistinguishFields->OptionValue[DistinguishFields],UseName->OptionValue[UseName]]
+
 (* Updated 18/December/2018 *)
 Options[PermutationSymmetryOfTensorProductParts]={DistinguishFields->False,UseName->False};
-PermutationSymmetryOfTensorProductParts[groupIn_,listOfRepsIn_,OptionsPattern[]]:=Module[{group,sumCharges,listOfReps,aux1,aux2,aux3,aux4,plesthysmFields,plesthysmFieldsUnderFactorGroups,sizeOfSnSubgroups,orderingX,savedResults},
+PermutationSymmetryOfTensorProductParts[groupIn_,listOfRepsIn_,OptionsPattern[]]:=Module[{group,sumCharges,listOfReps,aux1,aux2,aux3,aux4,plesthysmFields,plesthysmFieldsUnderFactorGroups,sizeOfSnSubgroups,orderingX,savedResults,result},
 (* Deal with single simple groups *)
 If[!IsSimpleGroupQ[groupIn],
 group=groupIn;listOfReps=listOfRepsIn;
@@ -360,7 +380,7 @@ aux1=Flatten[Table[{{el2[[1]],el[[2]]},el[[3]]el2[[2]]},{el,aux1},{el2,el[[1]]}]
 aux2=Table[CalculateSnBranchingRules[el[[1,2,i]],sizeOfSnSubgroups[[subGIdx,i]]],{el,aux1},{i,Length[el[[1,2]]]}];
 aux2=Tuples/@aux2;
 
-aux3=Table[{aux1[[i,1,1]],Flatten[aux2[[i,j,All,1]],1][[orderingX[[subGIdx]]]],Times@@aux2[[i,j,All,2]]},{i,Length[aux1]},{j,Length[aux2[[i]]]}];
+aux3=Table[{aux1[[i,1,1]],Flatten[aux2[[i,j,All,1]],1][[orderingX[[subGIdx]]]],aux1[[i,2]]Times@@aux2[[i,j,All,2]]},{i,Length[aux1]},{j,Length[aux2[[i]]]}];
 aux3=Flatten[aux3,1];
 Sow[aux3];
 ,{subGIdx,Length[group]}]][[2,1]];
@@ -382,11 +402,13 @@ If[IsSimpleGroupQ[groupIn],
 aux1[[All,1,1]]=aux1[[All,1,1,1]];
 ];
 
+result=aux1;
+SAVE0={group,groupIn,result};
 If[OptionValue[UseName],
-aux1={{RepName[groupIn,#[[1,1]]],DrawYoungDiagramRaster/@#[[1,2]]},#[[2]]}&/@aux1;
+result[[All,1]]=MapThread[List,{RepNameBatchMode[groupIn,result[[All,1,1]]],Map[DrawYoungDiagramRaster,result[[All,1,2]],{2}]}];
 ];
 
-Return[{plesthysmFields,aux1}];
+Return[{plesthysmFields,result}];
 ]
 
 (* Updated 18/December/2018 *)
@@ -696,6 +718,10 @@ Return[result];
 ]
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
+
+(* Alias of CalculateSnBranchingRules *)
+SnBranchingRules[nsOfSubgroups_]:=CalculateSnBranchingRules[nsOfSubgroups]
+
 (* Input is the list of n's of the Sn subgroups: H=Sn1 x Sn2 x Sn3 x... The output is a {<list of G=SN irreps>,<decomposition of G irreps into H irreps>}. All G irreps are decomposed! Note that CalculateSnBranchingRules[\[Lambda],ns] is more targetted, as a specific \[Lambda] can be chosen *)
 CalculateSnBranchingRules[nsOfSubgroups_]:=Module[{n,allSubgroupIrreps,allGroupIrreps,aux,aux2,aux3,allGroupIrreps2,subgroupIrreps},
 n=Total[nsOfSubgroups];
@@ -788,6 +814,9 @@ Return[result];
 
 (* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 
+(* Alias of CalculateSnBranchingRules *)
+SnBranchingRules[\[Lambda]in_,nsOfSubgroups_]:=CalculateSnBranchingRules[\[Lambda]in,nsOfSubgroups]
+
 (* Input: Irrep \[Lambda] of some SN to decompose, and nsOfSubgroups={n1,n2,n3,...} indicating the permutation subgroup. Output: list of subgroup irreps in \[Lambda]. Note that this function CalculateSnBranchingRules[\[Lambda],ns] is more targeted than CalculateSnBranchingRules[ns] which must calculate simultaneously the branching rules of all irreps of SN, because it is using ReduceRepProduct *)
 CalculateSnBranchingRules[\[Lambda]in_,nsOfSubgroups_]:=CalculateSnBranchingRules[\[Lambda]in,nsOfSubgroups]=Module[{\[Lambda]s,\[Lambda],result,ns,aux,partitionsSubgroup},
 If[Length[nsOfSubgroups]==1,Return[{{{\[Lambda]in},1}}]];
@@ -811,6 +840,10 @@ Return[result];
 
 
 (* ::Input::Initialization:: *)
+(* Alias of DrawYoungDiagram *)
+Options[YoungDiagram]={ScaleFactor->20};
+YoungDiagram[partition_,OptionsPattern[]]:=DrawYoungDiagram[partition,ScaleFactor->OptionValue[ScaleFactor]]
+
 (* Draws the Young diagram with the associated partition \[Lambda] *)
 Options[DrawYoungDiagram]={ScaleFactor->20};
 DrawYoungDiagram[\[Lambda]_,OptionsPattern[]]:=Module[{t\[Lambda],horizontalLines,verticalLines,result},

@@ -13,10 +13,11 @@ badInstallationDirectoryWarning=Row[{Style["(*) Warning:",{Darker[Red],Bold}]," 
 
 Block[{result},
 result={};
-AppendTo[result,Row[{Style["XXXXXXXXXXXXXXXXXXXXXXXXXXX ",{GrayLevel[0.5]}],Hyperlink[Mouseover[Style["GroupMath",{GrayLevel[0.5]}],Style["GroupMath",{Darker[Blue,0.5],Bold}]],"http://renatofonseca.net/groupmath.php"],Style[" XXXXXXXXXXXXXXXXXXXXXXXXXX",{GrayLevel[0.5]}]}]];
-AppendTo[result,Row[{"Version: "//SG,"1.0"//SG}]];
+AppendTo[result,Row[{SG["XXXXXXXXXXXXXXXXXXXXXXXXXXX "],SG["GroupMath"],SG[" XXXXXXXXXXXXXXXXXXXXXXXXXX"]}]];
+AppendTo[result,Row[{"Version: "//SG,"1.1 (29/October/2020)"//SG}]];
 AppendTo[result,Row[{"Author: "//SG,"Renato Fonseca"//SG}]];
-AppendTo[result,Row[{"Website: "//SG,"renatofonseca.net/groupmath.php"//SG}]];
+AppendTo[result,Row[{"Reference: "//SG,"2011.01764 [hep-th]"//SG}]];
+AppendTo[result,Row[{"Website: "//SG,Hyperlink[Mouseover[SG["renatofonseca.net/groupmath"],Style["renatofonseca.net/groupmath",{Darker[Blue,0.5],Bold}]],"http://renatofonseca.net/groupmath"]}]];
 AppendTo[result,Row[{"Built-in documentation: "//SG,Hyperlink[Mouseover[Style["here",{GrayLevel[0.5],Bold,Underlined}],Style["here",{Darker[Blue,0.5],Bold,Underlined}]],"paclet:GroupMath/tutorial/GroupMathDoc"],If[inGoodPathQ,"",Style[" (*)",{Darker[Red],Bold}]]}]];
 AppendTo[result,Style["XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",{GrayLevel[0.5]}]];
 
