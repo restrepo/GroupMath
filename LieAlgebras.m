@@ -1077,7 +1077,7 @@ aux2=ReduceRepProduct[cm,trueReps[[3;;-1]]][[1;;-1,1]];
 aux1=Intersection[aux1,aux2];
 
 Do[
-aux2=(IrrepInProduct[cm,Append[reps[[1;;2]],aux1[[i1]]],Conjugations->Append[conjs[[1;;2]],False]] //Normal )/.{a->ToExpression[FromCharacterCode[96+Length[otherStuff]+1]],b->ToExpression[FromCharacterCode[96+Length[otherStuff]+2]]};
+aux2=(IrrepInProduct[cm,Append[reps[[1;;2]],aux1[[i1]]],Conjugations->Append[conjs[[1;;2]],True]] //Normal )/.{a->ToExpression[FromCharacterCode[96+Length[otherStuff]+1]],b->ToExpression[FromCharacterCode[96+Length[otherStuff]+2]]};
 aux3=Flatten[Array[ToExpression[FromCharacterCode[96+Length[otherStuff]+2]],DimR[cm,aux1[[i1]]]]];
 aux2=(MapThread[Rule,{aux3,#}])&/@aux2;
 
