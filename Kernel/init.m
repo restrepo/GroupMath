@@ -14,7 +14,7 @@ badInstallationDirectoryWarning=Row[{Style["(*) Warning:",{Darker[Red],Bold}]," 
 Block[{result},
 result={};
 AppendTo[result,Row[{SG["XXXXXXXXXXXXXXXXXXXXXXXXXXX "],SG["GroupMath"],SG[" XXXXXXXXXXXXXXXXXXXXXXXXXX"]}]];
-AppendTo[result,Row[{"Version: "//SG,"1.1 (29/October/2020)"//SG}]];
+AppendTo[result,Row[{"Version: "//SG,"1.1.1 (4/November/2020)"//SG}]];
 AppendTo[result,Row[{"Author: "//SG,"Renato Fonseca"//SG}]];
 AppendTo[result,Row[{"Reference: "//SG,"2011.01764 [hep-th]"//SG}]];
 AppendTo[result,Row[{"Website: "//SG,Hyperlink[Mouseover[SG["renatofonseca.net/groupmath"],Style["renatofonseca.net/groupmath",{Darker[Blue,0.5],Bold}]],"http://renatofonseca.net/groupmath"]}]];
