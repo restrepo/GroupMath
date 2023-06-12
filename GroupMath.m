@@ -28,9 +28,9 @@ BeginPackage["GroupMath`"];
 (* ::Input::Initialization:: *)
 Begin["`Private`"]
 
-Get[Global`$GroupMathDirectory<>"/GenericTools.m"];
-Get[Global`$GroupMathDirectory<>"/LieAlgebras.m"];
-Get[Global`$GroupMathDirectory<>"/PermutationGroup.m"];
+Get[FileNameJoin[{Global`$GroupMathDirectory,"GenericTools.m"}]];
+Get[FileNameJoin[{Global`$GroupMathDirectory,"LieAlgebras.m"}]];
+Get[FileNameJoin[{Global`$GroupMathDirectory,"PermutationGroup.m"}]];
 
 End[];
 EndPackage[];
