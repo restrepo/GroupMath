@@ -14,7 +14,7 @@ badInstallationDirectoryWarning=Row[{Style["(*) Warning:",{Darker[Red],Bold}]," 
 Block[{result},
 result={};
 AppendTo[result,Row[{SG["XXXXXXXXXXXXXXXXXXXXXXXXXXX "],SG["GroupMath"],SG[" XXXXXXXXXXXXXXXXXXXXXXXXXX"]}]];
-AppendTo[result,Row[{"Version: "//SG,"1.1.1 (4/November/2020)"//SG}]];
+AppendTo[result,Row[{"Version: "//SG,"1.1.2 (6/May/2020)"//SG}]];
 AppendTo[result,Row[{"Author: "//SG,"Renato Fonseca"//SG}]];
 AppendTo[result,Row[{"Reference: "//SG,"2011.01764 [hep-th]"//SG}]];
 AppendTo[result,Row[{"Website: "//SG,Hyperlink[Mouseover[SG["renatofonseca.net/groupmath"],Style["renatofonseca.net/groupmath",{Darker[Blue,0.5],Bold}]],"http://renatofonseca.net/groupmath"]}]];
@@ -33,6 +33,9 @@ If[!inGoodPathQ,
 Print[badInstallationDirectoryWarning];
 ];
 
+
+
+Remove[SU2,Su2,su2,SU3,Su3,su3,SU4,Su4,su4,SU5,Su5,su5,SU6,Su6,su6,SU7,Su7,su7,SU8,Su8,su8,SU9,Su9,su9,SU10,Su10,su10,SU11,Su11,su11,SU12,Su12,su12,SU13,Su13,su13,SU14,Su14,su14,SU15,Su15,su15,SU16,Su16,su16,SU17,Su17,su17,SU18,Su18,su18,SU19,Su19,su19,SU20,Su20,su20,SU21,Su21,su21,SU22,Su22,su22,SU23,Su23,su23,SU24,Su24,su24,SU25,Su25,su25,SU26,Su26,su26,SU27,Su27,su27,SU28,Su28,su28,SU29,Su29,su29,SU30,Su30,su30,SU31,Su31,su31,SU32,Su32,su32,SO3,So3,so3,SO5,So5,so5,SO6,So6,so6,SO7,So7,so7,SO8,So8,so8,SO9,So9,so9,SO10,So10,so10,SO11,So11,so11,SO12,So12,so12,SO13,So13,so13,SO14,So14,so14,SO15,So15,so15,SO16,So16,so16,SO17,So17,so17,SO18,So18,so18,SO19,So19,so19,SO20,So20,so20,SO21,So21,so21,SO22,So22,so22,SO23,So23,so23,SO24,So24,so24,SO25,So25,so25,SO26,So26,so26,SO27,So27,so27,SO28,So28,so28,SO29,So29,so29,SO30,So30,so30,SO31,So31,so31,SO32,So32,so32,E6,e6,E7,e7,E8,e8,G2,g2,F4,f4,U1,u1,a,b,c,d,e,f,g,h];
 
 
 Get["GroupMath`GroupMath`"];
